@@ -1,0 +1,2 @@
+inventories/prod/hosts.ini
+group_vars/secrets.yml

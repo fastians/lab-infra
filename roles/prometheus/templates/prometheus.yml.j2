@@ -1,0 +1,37 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+
+  # =====================
+  # PROMETHEUS ITSELF
+  # =====================
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+
+  # =====================
+  # NODE EXPORTERS (ALL SERVERS)
+  # =====================
+  - job_name: node_exporters
+    static_configs:
+      {% for host in groups['app'] + groups['monitor'] %}
+      - targets: ['{{ hostvars[host].ansible_host }}:9100']
+        labels:
+          instance: {{ host }}
+      {% endfor %}
+
+
+  # =====================
+  # FASTAPI METRICS
+  # =====================
+  - job_name: fastapi
+    metrics_path: /metrics
+    static_configs:
+      {% for host in groups['app'] %}
+      - targets: ['{{ hostvars[host].ansible_host }}:8000']
+        labels:
+          service: fastapi
+          instance: {{ host }}
+      {% endfor %}
