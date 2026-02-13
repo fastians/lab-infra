@@ -1,0 +1,20 @@
+[Unit]
+Description=FastAPI SALOME Service
+After=network.target
+
+[Service]
+Type=simple
+User=mateen_fastians
+Group=mateen_fastians
+WorkingDirectory=/home/mateen_fastians/opt/MEK_LAB_SALOME/app
+
+Environment="PATH=/home/mateen_fastians/opt/MEK_LAB_SALOME/app/.venv/bin"
+EnvironmentFile=/home/mateen_fastians/opt/MEK_LAB_SALOME/app/.env
+
+ExecStart=/home/mateen_fastians/opt/MEK_LAB_SALOME/app/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 1
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

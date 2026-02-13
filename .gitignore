@@ -1,2 +1,33 @@
-inventories/prod/hosts.ini
+# Secrets and Environment Files
 group_vars/secrets.yml
+config_files/env/*.env
+!config_files/env/*.env.example
+.vault_pass
+*.vault
+
+# Ansible
+*.retry
+.ansible/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

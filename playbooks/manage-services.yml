@@ -1,0 +1,7 @@
+---
+# Manage systemd service files
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/manage-services.yml
+
+- hosts: backend:salome
+  roles:
+    - app_services

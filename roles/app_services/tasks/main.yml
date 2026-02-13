@@ -1,0 +1,79 @@
+---
+# Manage application systemd services and environment files
+
+- name: Deploy systemd service files
+  template:
+    src: "{{ item }}.service.j2"
+    dest: "/etc/systemd/system/{{ item }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  loop:
+    - mek_lab_backend
+    - geoserver
+    - meklab-llm
+  when: inventory_hostname in groups['backend']
+  notify: reload systemd
+
+- name: Deploy salome systemd service file
+  template:
+    src: salome-fastapi.service.j2
+    dest: /etc/systemd/system/salome-fastapi.service
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  when: inventory_hostname in groups['salome']
+  notify: reload systemd
+
+- name: Deploy environment files (if defined)
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: mateen_fastians
+    group: mateen_fastians
+    mode: '0600'
+  become: yes
+  loop:
+    - { src: "env/mek_lab_backend.env.j2", dest: "/home/mateen_fastians/.apps/MEK_LAB_BACKEND/.env" }
+    - { src: "env/geoserver.env.j2", dest: "/home/mateen_fastians/.apps/Defeaturing/.env" }
+    - { src: "env/meklab-llm.env.j2", dest: "/home/mateen_fastians/.apps/MEK_LAB_LLM_AGENT/.env" }
+  when: 
+    - inventory_hostname in groups['backend']
+    - item.src is file
+  notify: restart services
+  ignore_errors: yes
+
+- name: Deploy salome environment file (if defined)
+  template:
+    src: env/salome-fastapi.env.j2
+    dest: /home/mateen_fastians/opt/MEK_LAB_SALOME/app/.env
+    owner: mateen_fastians
+    group: mateen_fastians
+    mode: '0600'
+  become: yes
+  when: 
+    - inventory_hostname in groups['salome']
+  notify: restart salome
+  ignore_errors: yes
+
+- name: Enable services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    daemon_reload: yes
+  become: yes
+  loop:
+    - mek_lab_backend
+    - geoserver
+    - meklab-llm
+  when: inventory_hostname in groups['backend']
+
+- name: Enable salome service
+  systemd:
+    name: salome-fastapi
+    enabled: yes
+    daemon_reload: yes
+  become: yes
+  when: inventory_hostname in groups['salome']

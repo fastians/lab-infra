@@ -1,0 +1,23 @@
+---
+- name: reload systemd
+  systemd:
+    daemon_reload: yes
+  become: yes
+
+- name: restart services
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  become: yes
+  loop:
+    - mek_lab_backend
+    - geoserver
+    - meklab-llm
+  when: inventory_hostname in groups['backend']
+
+- name: restart salome
+  systemd:
+    name: salome-fastapi
+    state: restarted
+  become: yes
+  when: inventory_hostname in groups['salome']
