@@ -1,0 +1,45 @@
+---
+# Manual deployment playbook with branch support
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/deploy.yml -e service=mek_lab_backend -e branch=main
+
+- hosts: "{{ target | default('backend') }}"
+  vars:
+    service: "{{ service | default('mek_lab_backend') }}"
+    branch: "{{ branch | default('main') }}"
+    script_map:
+      mek_lab_backend: "/home/mateen_fastians/.deploy/mek_lab_backend.sh"
+      geoserver: "/home/mateen_fastians/.deploy/geoserver.sh"
+      meklab-llm: "/home/mateen_fastians/.deploy/meklab-llm.sh"
+      salome-fastapi: "/home/mateen_fastians/opt/deploy.sh"
+  
+  tasks:
+    - name: Validate service name
+      assert:
+        that:
+          - service in ['mek_lab_backend', 'geoserver', 'meklab-llm', 'salome-fastapi']
+        fail_msg: "Invalid service. Must be one of: mek_lab_backend, geoserver, meklab-llm, salome-fastapi"
+
+    - name: Deploy {{ service }} from branch {{ branch }}
+      shell: "{{ script_map[service] }} {{ branch }}"
+      become: yes
+      become_user: mateen_fastians
+      register: deploy_output
+      changed_when: "'DEPLOY OK' in deploy_output.stdout"
+
+    - name: Show deployment output
+      debug:
+        msg: "{{ deploy_output.stdout_lines }}"
+
+    - name: Verify service is running
+      systemd:
+        name: "{{ service }}.service"
+        state: started
+      become: yes
+      register: service_status
+
+    - name: Deployment summary
+      debug:
+        msg: 
+          - "✅ Service: {{ service }}"
+          - "✅ Branch: {{ branch }}"
+          - "✅ Status: {{ service_status.status.ActiveState }}"

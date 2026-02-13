@@ -5,15 +5,16 @@ Ansible project deploying monitoring stack: Prometheus, Grafana, Loki, Promtail,
 ## Structure
 - `inventories/`: prod/sample host definitions
 - `group_vars/`: Variables (all.yml, secrets.yml)
-- `roles/`: common, node_exporter, prometheus, grafana, loki, promtail
+- `roles/`: common, node_exporter, prometheus, grafana, loki, promtail, salome_fastapi
 - `site.yml`: Main playbook
 
 ## Status
-✅ common, node_exporter roles complete
-⚠️ prometheus (template only), grafana, loki, promtail (empty)
+✅ common, node_exporter, loki, grafana, promtail, salome_fastapi roles complete
+⚠️ prometheus (config only, no installation tasks)
 
 ## Key Patterns
-- Inventory groups: `monitoring` (central services), `app` (monitored servers)
+- Inventory groups: `backend` (Grafana, Loki, Prometheus, FastAPI services), `salome` (salome-fastapi service)
+- Host names: `backend-server`, `salome-server`
 - Prometheus uses Jinja2 for dynamic target discovery
 - Services: systemd with dedicated system users, no-login shells
 - Variables centralized in group_vars/all.yml

@@ -1,0 +1,62 @@
+---
+# Sync deployment scripts from Ansible repo to servers
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/sync-scripts.yml
+
+- hosts: backend
+  tasks:
+    - name: Ensure deploy directory exists
+      file:
+        path: /home/mateen_fastians/.deploy
+        state: directory
+        owner: mateen_fastians
+        group: deploy
+        mode: '0750'
+      become: yes
+
+    - name: Sync deployment scripts to backend server
+      copy:
+        src: "../deployment_scripts/{{ item }}"
+        dest: "/home/mateen_fastians/.deploy/{{ item }}"
+        owner: mateen_fastians
+        group: deploy
+        mode: '0750'
+      become: yes
+      loop:
+        - mek_lab_backend.sh
+        - geoserver.sh
+        - meklab-llm.sh
+
+    - name: Verify scripts are executable
+      file:
+        path: "/home/mateen_fastians/.deploy/{{ item }}"
+        mode: '0750'
+      become: yes
+      loop:
+        - mek_lab_backend.sh
+        - geoserver.sh
+        - meklab-llm.sh
+
+- hosts: salome
+  tasks:
+    - name: Ensure deploy directory exists
+      file:
+        path: /home/mateen_fastians/opt
+        state: directory
+        owner: mateen_fastians
+        mode: '0755'
+      become: yes
+
+    - name: Sync salome deployment script
+      copy:
+        src: "../deployment_scripts/salome-fastapi.sh"
+        dest: "/home/mateen_fastians/opt/deploy.sh"
+        owner: mateen_fastians
+        mode: '0750'
+      become: yes
+
+    - name: Ensure script is executable
+      file:
+        path: "/home/mateen_fastians/opt/deploy.sh"
+        owner: mateen_fastians
+        mode: '0750'
+      become: yes
