@@ -1,0 +1,29 @@
+- name: Ensure salome-fastapi service is enabled
+  systemd:
+    name: salome-fastapi
+    enabled: yes
+  become: yes
+
+- name: Start salome-fastapi service
+  systemd:
+    name: salome-fastapi
+    state: started
+  become: yes
+
+- name: Configure nginx for salome
+  template:
+    src: salome-nginx.conf.j2
+    dest: /etc/nginx/sites-available/salome
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+  notify: reload nginx
+
+- name: Enable nginx site
+  file:
+    src: /etc/nginx/sites-available/salome
+    dest: /etc/nginx/sites-enabled/salome
+    state: link
+  become: yes
+  notify: reload nginx

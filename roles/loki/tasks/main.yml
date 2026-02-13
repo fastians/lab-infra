@@ -1,0 +1,67 @@
+- name: Create loki user
+  user:
+    name: loki
+    shell: /usr/sbin/nologin
+    system: yes
+    create_home: no
+  become: yes
+
+- name: Download loki
+  get_url:
+    url: "{{ loki_url }}"
+    dest: /usr/local/bin/loki
+    mode: '0755'
+  become: yes
+
+- name: Create loki config directory
+  file:
+    path: /etc/loki
+    state: directory
+    owner: loki
+    group: loki
+    mode: '0755'
+  become: yes
+
+- name: Create loki data directory
+  file:
+    path: /var/lib/loki
+    state: directory
+    owner: loki
+    group: loki
+    mode: '0755'
+  become: yes
+
+- name: Configure loki
+  template:
+    src: loki-config.yml.j2
+    dest: /etc/loki/config.yml
+    owner: loki
+    group: loki
+    mode: '0644'
+  become: yes
+  notify: restart loki
+
+- name: Create systemd service
+  copy:
+    dest: /etc/systemd/system/loki.service
+    content: |
+      [Unit]
+      Description=Loki
+      After=network.target
+
+      [Service]
+      User=loki
+      ExecStart=/usr/local/bin/loki -config.file=/etc/loki/config.yml
+      Restart=always
+
+      [Install]
+      WantedBy=default.target
+  become: yes
+
+- name: Start loki
+  systemd:
+    name: loki
+    daemon_reload: yes
+    enabled: yes
+    state: started
+  become: yes

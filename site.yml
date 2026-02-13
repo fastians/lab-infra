@@ -2,6 +2,18 @@
 #   roles:
 #     - common
 
-- hosts: app:monitor
+# - hosts: backend:salome
+#   roles:
+#     - node_exporter
+
+- hosts: salome
   roles:
-    - node_exporter
+    - prometheus
+    - salome_fastapi
+    - promtail
+
+- hosts: backend
+  roles:
+    - loki
+    - grafana
+    - promtail_backend

@@ -14,14 +14,15 @@ scrape_configs:
   # =====================
   # NODE EXPORTERS (ALL SERVERS)
   # =====================
-  - job_name: node_exporters
+   - job_name: node_exporters
     static_configs:
-      {% for host in groups['app'] + groups['monitor'] %}
+      {% set backend_hosts = groups.get('backend', []) %}
+      {% set salome_hosts = groups.get('salome', []) %}
+      {% for host in backend_hosts + salome_hosts %}
       - targets: ['{{ hostvars[host].ansible_host }}:9100']
         labels:
           instance: {{ host }}
       {% endfor %}
-
 
   # =====================
   # FASTAPI METRICS
@@ -29,9 +30,22 @@ scrape_configs:
   - job_name: fastapi
     metrics_path: /metrics
     static_configs:
-      {% for host in groups['app'] %}
+      {% for host in groups.get('backend', []) %}
       - targets: ['{{ hostvars[host].ansible_host }}:8000']
         labels:
           service: fastapi
+          instance: {{ host }}
+      {% endfor %}
+
+  # =====================
+  # SALOME FASTAPI (MONITOR SERVER)
+  # =====================
+  - job_name: salome-fastapi
+    metrics_path: /metrics
+    static_configs:
+      {% for host in groups.get('salome', []) %}
+      - targets: ['{{ hostvars[host].ansible_host }}:8000']
+        labels:
+          service: salome-fastapi
           instance: {{ host }}
       {% endfor %}

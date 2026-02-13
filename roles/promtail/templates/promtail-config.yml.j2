@@ -1,0 +1,55 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://{{ loki_server }}:3100/loki/api/v1/push
+
+scrape_configs:
+  # System logs from files
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          host: salome
+          __path__: /var/log/*log
+
+  # Nginx logs
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          host: salome
+          __path__: /var/log/nginx/*.log
+
+  # Salome FastAPI from journalctl
+  - job_name: salome-fastapi-journal
+    journal:
+      max_age: 12h
+      labels:
+        job: salome-fastapi
+        host: salome
+    relabel_configs:
+      - source_labels: ['__journal__systemd_unit']
+        target_label: 'unit'
+      - source_labels: ['__journal__hostname']
+        target_label: 'hostname'
+    pipeline_stages:
+      - match:
+          selector: '{unit="salome-fastapi.service"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  logger: logger
+                  message: message
+            - labels:
+                level:
+                logger:

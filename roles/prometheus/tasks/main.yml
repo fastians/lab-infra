@@ -1,0 +1,31 @@
+- name: Ensure prometheus config directory exists
+  file:
+    path: /etc/prometheus
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: yes
+
+
+- name: Backup existing config (safety)
+  copy:
+    src: /etc/prometheus/prometheus.yml
+    dest: /etc/prometheus/prometheus.yml.bak
+    remote_src: yes
+  ignore_errors: yes
+  become: yes
+
+
+- name: Copy Prometheus config from template
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+  become: yes
+
+
+- name: Restart Prometheus
+  systemd:
+    name: prometheus
+    state: restarted
+  become: yes

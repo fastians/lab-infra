@@ -71,16 +71,16 @@ ansible-playbook -i inventories/prod/hosts.ini site.yml
 
 The inventory file defines two groups:
 
-- `monitoring`: Servers running Prometheus, Grafana, and Loki
-- `app`: Application servers with Node Exporter and Promtail
+- `backend`: Main backend server running Grafana, Loki, Prometheus, FastAPI services
+- `salome`: Salome server with salome-fastapi service
 
 Example:
 ```ini
-[monitoring]
-monitor ansible_host=MONITOR_SERVER_IP ansible_user=mateen_fastians
+[backend]
+backend-server ansible_host=BACKEND_SERVER_IP ansible_user=mateen_fastians
 
-[app]
-app1 ansible_host=APP_SERVER_IP ansible_user=mateen_fastians
+[salome]
+salome-server ansible_host=SALOME_SERVER_IP ansible_user=mateen_fastians
 ```
 
 ### Variables
@@ -147,18 +147,72 @@ ansible-playbook -i inventories/prod/hosts.ini site.yml --limit app1
 
 After deployment:
 
-- **Prometheus**: http://monitor-server:9090
-- **Grafana**: http://monitor-server:3000
-- **Node Exporter**: http://any-server:9100/metrics
-- **FastAPI Metrics**: http://app-server:8000/metrics
+- **Grafana**: http://api.mek-lab.com:3000
+- **Prometheus**: http://salome.mek-lab.com:9090
+- **Loki**: http://api.mek-lab.com:3100
 
-## Monitoring Targets
+## Monitored Services
 
-The Prometheus configuration automatically discovers and monitors:
+### Backend Server (api.mek-lab.com)
+- **mek_lab_backend.service** - MEK-LAB Backend FastAPI
+- **geoserver.service** - GeoServer
+- **meklab-llm.service** - MEK-LAB LLM Agent
 
-1. **Prometheus itself** (localhost:9090)
-2. **All Node Exporters** (port 9100) on app and monitoring servers
-3. **FastAPI applications** (port 8000/metrics) on app servers
+### Salome Server (salome.mek-lab.com)
+- **salome-fastapi.service** - Salome FastAPI
+
+## Service Management
+
+### Backend Services
+```bash
+# Restart services
+sudo systemctl restart mek_lab_backend.service
+sudo systemctl restart geoserver.service
+sudo systemctl restart meklab-llm.service
+
+# Check status
+sudo systemctl status mek_lab_backend.service
+sudo systemctl status geoserver.service
+sudo systemctl status meklab-llm.service
+
+# View logs
+sudo journalctl -u mek_lab_backend.service -f
+sudo journalctl -u geoserver.service -f
+sudo journalctl -u meklab-llm.service -f
+```
+
+### Salome Service
+```bash
+# Restart service
+sudo systemctl restart salome-fastapi.service
+
+# Check status
+sudo systemctl status salome-fastapi.service
+
+# View logs
+sudo journalctl -u salome-fastapi.service -f
+```
+
+## Viewing Logs in Grafana
+
+Go to http://api.mek-lab.com:3000 → Explore → Select "Loki (Salome)"
+
+```logql
+# Backend service
+{job="meklab-backend"}
+
+# GeoServer
+{job="geoserver"}
+
+# LLM service
+{job="meklab-llm"}
+
+# Salome service
+{job="salome-fastapi"}
+
+# All services
+{job=~"meklab-backend|geoserver|meklab-llm|salome-fastapi"}
+```
 
 ## Troubleshooting
 

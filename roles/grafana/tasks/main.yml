@@ -1,0 +1,43 @@
+- name: Install dependencies
+  apt:
+    name:
+      - apt-transport-https
+      - software-properties-common
+    state: present
+  become: yes
+
+- name: Add Grafana GPG key
+  apt_key:
+    url: https://apt.grafana.com/gpg.key
+    state: present
+  become: yes
+
+- name: Add Grafana repository
+  apt_repository:
+    repo: deb https://apt.grafana.com stable main
+    state: present
+  become: yes
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Configure Grafana datasources
+  template:
+    src: datasources.yml.j2
+    dest: /etc/grafana/provisioning/datasources/datasources.yml
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  become: yes
+  notify: restart grafana
+
+- name: Start Grafana
+  systemd:
+    name: grafana-server
+    enabled: yes
+    state: started
+  become: yes

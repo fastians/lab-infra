@@ -1,3 +1,12 @@
 node_exporter_version: "1.7.0"
 node_exporter_filename: "node_exporter-{{ node_exporter_version }}.linux-amd64.tar.gz"
 node_exporter_url: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/{{ node_exporter_filename }}"
+
+loki_version: "2.9.3"
+loki_url: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki-linux-amd64.zip"
+
+promtail_version: "2.9.3"
+promtail_url: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip"
+
+prometheus_server: "{{ hostvars[groups['salome'][0]].ansible_host }}"
+loki_server: "{{ hostvars[groups['backend'][0]].ansible_host }}"

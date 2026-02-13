@@ -1,0 +1,95 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push
+
+scrape_configs:
+  # System logs from files
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          host: backend
+          __path__: /var/log/*log
+
+  # Nginx logs
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          host: backend
+          __path__: /var/log/nginx/*.log
+
+  # GeoServer from journalctl
+  - job_name: geoserver-journal
+    journal:
+      max_age: 12h
+      labels:
+        job: geoserver
+        host: backend
+    relabel_configs:
+      - source_labels: ['__journal__systemd_unit']
+        target_label: 'unit'
+    pipeline_stages:
+      - match:
+          selector: '{unit="geoserver.service"}'
+          stages:
+            - regex:
+                expression: '(?P<level>INFO|WARN|ERROR|DEBUG)'
+            - labels:
+                level:
+
+  # MEK-LAB Backend from journalctl
+  - job_name: meklab-backend-journal
+    journal:
+      max_age: 12h
+      labels:
+        job: meklab-backend
+        host: backend
+    relabel_configs:
+      - source_labels: ['__journal__systemd_unit']
+        target_label: 'unit'
+    pipeline_stages:
+      - match:
+          selector: '{unit="mek_lab_backend.service"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  logger: logger
+                  message: message
+            - labels:
+                level:
+                logger:
+
+  # MEK-LAB LLM from journalctl
+  - job_name: meklab-llm-journal
+    journal:
+      max_age: 12h
+      labels:
+        job: meklab-llm
+        host: backend
+    relabel_configs:
+      - source_labels: ['__journal__systemd_unit']
+        target_label: 'unit'
+    pipeline_stages:
+      - match:
+          selector: '{unit="meklab-llm.service"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  logger: logger
+                  message: message
+            - labels:
+                level:
+                logger:
