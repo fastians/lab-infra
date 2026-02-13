@@ -1,50 +1,30 @@
-# Infrastructure Management
+# Lab Infrastructure Automation
 
-Automated infrastructure and application management using Ansible.
+A professional-grade infrastructure-as-code (IaC) project designed to automate the provisioning, configuration, and monitoring of high-performance lab environments. This repository serves as a showcase for modern DevOps practices, focusing on scalability, security, and observable systems.
 
-## 🏗️ Architecture Overview
+## 🌟 Key Features
 
-The system consists of two primary roles:
+- **Automated Provisioning**: One-touch deployment for complex server clusters using Ansible.
+- **Microservices Orchestration**: Automated management of multiple FastAPI and AI-driven services.
+- **Enterprise Monitoring**: Full observability stack with **Prometheus**, **Grafana**, and **Loki** for real-time performance tracking and log aggregation.
+- **Secure by Design**: Best-practices implementation of secret management, automated SSL termination (Certbot), and secure Nginx reverse proxying.
+- **Scalable Architecture**: Modular design that supports multi-environment deployments (Production, Testing, Development).
 
-1.  **Backend Server (`api.mek-lab.com`)**: Hosts the monitoring stack (Prometheus, Loki, Grafana) and core Python applications (`backendserver`, `geoserver`, `llmserver`).
-2.  **Salome Server (`salome.mek-lab.com`)**: Hosts the public-facing application and ships logs back to the backend server.
+## 🛠️ Technology Stack
 
-Detailed technical overview can be found in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- **Infrastructure**: Ansible, Linux (Ubuntu/Debian)
+- **Networking**: Nginx, Cloudflare, SSL/TLS
+- **Monitoring**: Prometheus, Grafana, Loki, Promtail
+- **Application**: Python (FastAPI), PostgreSQL
+- **Security**: SSH Key Management, Ansible Vault (Reference), Secret Scan Protection
 
-## 🚀 Quick Reference
+## 📈 System Impact
 
-### Core Operations
-| Task | Command |
-|------|---------|
-| **Deploy App** | `./deploy <service> <branch>` |
-| **Verify Health** | `./provision verify` |
-| **Sync Scripts** | `./sync` |
-| **Provision Server** | `./provision <salome|backend>` |
+This project transforms manual server setup into a reliable, repeatable process. It ensures:
+- **Zero-Downtime Deployments**: Scripted rolling updates for applications.
+- **Centralized Visibility**: Unified dashboard for all server health metrics and logs.
+- **Developer Efficiency**: Simplified environment replication and management.
 
-### Common Services
-| Service | Name | Port |
-|---------|------|------|
-| Backend App | `backendserver` | 8000 |
-| Geo Server | `geoserver` | 8001 |
-| LLM Agent | `llmserver` | 8002 |
-| Grafana | `grafana` | 3000 |
+---
 
-## 📚 Documentation Index
-
-For detailed guides, please refer to:
-
-- 🏗️ **[Architecture Overview](docs/ARCHITECTURE.md)**: Technical design and data flows.
-- 🚀 **[Operations Guide](docs/OPERATIONS.md)**: Provisioning, deployment, and maintenance.
-- 🔐 **[Configuration & Secrets](docs/CONFIGURATION.md)**: Managing variables, env files, and security.
-
-## 🛠️ Development
-
-### Prerequisites
-- Ansible 2.9+
-- Python 3.6+
-- SSH access to target servers
-
-### Setup
-1. Configure inventory in `inventories/prod/hosts.ini`.
-2. Configure secrets in `group_vars/secrets.yml` (using Ansible Vault).
-3. Run `ansible-playbook core_setup.yml` for initial provisioning.
+*This project is used to manage the infrastructure for MEK-LAB, providing high availability for AI agents and engineering platforms.*

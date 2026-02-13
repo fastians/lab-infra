@@ -9,8 +9,8 @@ Ansible infrastructure automation: monitoring, provisioning, deployment, configu
 4. **Monitoring**: Prometheus, Grafana, Loki, Promtail (aggregated on Backend)
 
 ## Structure
-- `inventories/`: prod/sample host definitions
-- `group_vars/`: Variables (backend.yml, secrets.yml)
+- `inventories/`: Environment specific configs (prod, sample)
+- `inventories/prod/group_vars/`: Production variables (all/all.yml, all/secrets.yml)
 - `roles/`:
   - `python_app`: Generic role for all Python web services
   - `nginx`: Automated Nginx configuration for backend
@@ -40,14 +40,14 @@ ansible-playbook -i inventories/prod/hosts.ini playbooks/manage-services.yml
   - Services: `backendserver`, `geoserver`, `llmserver`
   - Monitoring: Full stack (Prometheus, Loki, Grafana)
 - **salome-server** (salome.mek-lab.com):
-  - Services: `salome-fastapi`
+  - Services: `salomeserver`
   - Proxy: Nginx + Certbot
 
 ## Standard Service Names
 - `backendserver` (port 8000)
 - `geoserver` (port 8001)
 - `llmserver` (port 8002)
-- `salome-fastapi` (port 8000)
+- `salomeserver` (port 8000)
 
 ## Documentation Hierarchy
 - `README.md`: Entry point & Quick Reference
