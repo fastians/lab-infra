@@ -1,5 +1,0 @@
-- name: restart promtail
-  systemd:
-    name: promtail
-    state: restarted
-  become: yes

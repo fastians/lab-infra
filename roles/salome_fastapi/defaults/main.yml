@@ -1,0 +1,7 @@
+---
+salome_user: mateen_fastians
+salome_repo_url: "{{ vault_salome_engineering_repo_url }}"
+salome_branch: "main"
+salome_app_dir: "/home/{{ salome_user }}/opt/MEK_LAB_SALOME/app"
+salome_python_version: "python3"
+salome_port: 8000

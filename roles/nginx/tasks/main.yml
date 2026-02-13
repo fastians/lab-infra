@@ -1,0 +1,46 @@
+---
+- name: Install system dependencies
+  apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+    update_cache: yes
+
+- name: Create nginx sites-available config
+  template:
+    src: backend-nginx.conf.j2
+    dest: /etc/nginx/sites-available/mek-lab.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload nginx
+
+- name: Enable nginx site
+  file:
+    src: /etc/nginx/sites-available/mek-lab.conf
+    dest: /etc/nginx/sites-enabled/mek-lab.conf
+    state: link
+  notify: reload nginx
+
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
+- name: Create metrics config
+  template:
+    src: metrics.conf.j2
+    dest: /etc/nginx/conf.d/metrics.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload nginx
+
+- name: Ensure nginx is started and enabled
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes

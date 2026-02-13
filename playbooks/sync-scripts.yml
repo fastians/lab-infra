@@ -22,9 +22,9 @@
         mode: '0750'
       become: yes
       loop:
-        - mek_lab_backend.sh
+        - backendserver.sh
         - geoserver.sh
-        - meklab-llm.sh
+        - llmserver.sh
 
     - name: Verify scripts are executable
       file:
@@ -32,9 +32,9 @@
         mode: '0750'
       become: yes
       loop:
-        - mek_lab_backend.sh
+        - backendserver.sh
         - geoserver.sh
-        - meklab-llm.sh
+        - llmserver.sh
 
 - hosts: salome
   tasks:

@@ -1,0 +1,108 @@
+---
+# Generic Python Application Deployment Tasks
+
+- name: Install system dependencies
+  apt:
+    name:
+      - git
+      - "python{{ app_python_version }}"
+      - "python{{ app_python_version }}-venv"
+      - "python{{ app_python_version }}-dev"
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Create application user
+  user:
+    name: "{{ app_user }}"
+    shell: /bin/bash
+    create_home: yes
+  become: yes
+
+- name: Create application directory
+  file:
+    path: "{{ app_base_dir }}/{{ app_name }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+  become: yes
+
+- name: Check if repository already exists
+  stat:
+    path: "{{ app_base_dir }}/{{ app_name }}/.git"
+  register: repo_exists
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: Clone repository
+  git:
+    repo: "{{ app_repo_url }}"
+    dest: "{{ app_base_dir }}/{{ app_name }}"
+    version: "{{ app_branch }}"
+    force: no
+  become: yes
+  become_user: "{{ app_user }}"
+  when: not repo_exists.stat.exists
+
+- name: Update repository
+  shell: |
+    cd {{ app_base_dir }}/{{ app_name }}
+    git fetch origin
+    git checkout {{ app_branch }}
+    git pull origin {{ app_branch }}
+  become: yes
+  become_user: "{{ app_user }}"
+  when: repo_exists.stat.exists
+  register: git_update
+  changed_when: "'Already up to date' not in git_update.stdout"
+
+- name: Create Python virtual environment
+  command: "python{{ app_python_version }} -m venv {{ app_base_dir }}/{{ app_name }}/.venv"
+  args:
+    creates: "{{ app_base_dir }}/{{ app_name }}/.venv/bin/python"
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: Install Python dependencies
+  pip:
+    requirements: "{{ app_base_dir }}/{{ app_name }}/requirements.txt"
+    virtualenv: "{{ app_base_dir }}/{{ app_name }}/.venv"
+    virtualenv_command: "python{{ app_python_version }} -m venv"
+  become: yes
+  become_user: "{{ app_user }}"
+
+- name: Create environment file
+  template:
+    src: "env/{{ app_name }}.env.j2"
+    dest: "{{ app_base_dir }}/{{ app_name }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0600'
+  become: yes
+  notify: "Restart {{ app_name }}"
+
+- name: Create systemd service
+  template:
+    src: python_app.service.j2
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+  become: yes
+  notify: "Restart {{ app_name }}"
+
+- name: Start and enable service
+  systemd:
+    name: "{{ app_name }}"
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  become: yes
+
+- name: Copy deployment script
+  template:
+    src: deploy.sh.j2
+    dest: "/home/{{ app_user }}/.deploy/{{ app_name }}.sh"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+  become: yes
+  when: false  # Disabled for now, will create later

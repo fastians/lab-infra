@@ -1,0 +1,187 @@
+---
+# Verify Server Health and Configuration
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/verify-servers.yml
+
+- name: Verify All Servers
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  tasks:
+    # ============================================
+    # System Checks
+    # ============================================
+    - name: "CHECK 1.1 - System uptime"
+      command: uptime
+      register: uptime_result
+      changed_when: false
+      tags: [system]
+
+    - name: "CHECK 1.2 - Disk space"
+      command: df -h /
+      register: disk_result
+      changed_when: false
+      tags: [system]
+
+    - name: "CHECK 1.3 - Memory usage"
+      command: free -h
+      register: memory_result
+      changed_when: false
+      tags: [system]
+
+    - name: "Display system info"
+      debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Uptime: {{ uptime_result.stdout }}"
+          - "Disk: {{ disk_result.stdout_lines[1] }}"
+          - "Memory: {{ memory_result.stdout_lines[1] }}"
+      tags: [system]
+
+# ============================================
+# Backend Server Checks
+# ============================================
+- name: Verify Backend Server Services
+  hosts: backend-server
+  become: yes
+  
+  vars:
+    backend_services:
+      - name: backendserver
+        port: 8000
+      - name: geoserver
+        port: 8001
+      - name: llmserver
+        port: 8002
+      - name: grafana-server
+        port: 3000
+      - name: prometheus
+        port: 9090
+      - name: loki
+        port: 3100
+      - name: promtail
+        port: 9080
+
+  tasks:
+    - name: "CHECK 2.1 - Service status"
+      systemd:
+        name: "{{ item.name }}"
+      register: service_status
+      loop: "{{ backend_services }}"
+      tags: [services]
+
+    - name: "CHECK 2.2 - Port listening"
+      wait_for:
+        port: "{{ item.port }}"
+        host: 127.0.0.1
+        timeout: 5
+        state: started
+      register: port_check
+      loop: "{{ backend_services }}"
+      ignore_errors: yes
+      tags: [ports]
+
+    - name: "CHECK 2.3 - Application health endpoints"
+      uri:
+        url: "http://127.0.0.1:{{ item.port }}/health"
+        status_code: 200
+        timeout: 5
+      register: health_check
+      loop:
+        - { port: 8000 }
+        - { port: 8001 }
+        - { port: 8002 }
+      ignore_errors: yes
+      tags: [health]
+
+    - name: "Display backend service status"
+      debug:
+        msg:
+          - "=========================================="
+          - "Backend Server Status"
+          - "=========================================="
+          - "{% for item in service_status.results %}"
+          - "{{ item.item.name }}: {{ 'RUNNING' if item.status.ActiveState == 'active' else 'STOPPED' }}"
+          - "{% endfor %}"
+      tags: [summary]
+
+# ============================================
+# Salome Server Checks
+# ============================================
+- name: Verify Salome Server Services
+  hosts: salome-server
+  become: yes
+  
+  vars:
+    salome_services:
+      - name: salome-fastapi
+        port: 8000
+      - name: blackbox_exporter
+        port: 9115
+      - name: promtail
+        port: 9080
+
+  tasks:
+    - name: "CHECK 3.1 - Service status"
+      systemd:
+        name: "{{ item.name }}"
+      register: service_status
+      loop: "{{ salome_services }}"
+      tags: [services]
+
+    - name: "CHECK 3.2 - Port listening"
+      wait_for:
+        port: "{{ item.port }}"
+        host: 127.0.0.1
+        timeout: 5
+        state: started
+      register: port_check
+      loop: "{{ salome_services }}"
+      ignore_errors: yes
+      tags: [ports]
+
+    - name: "CHECK 3.3 - Salome health endpoint"
+      uri:
+        url: "http://127.0.0.1:8000/health"
+        status_code: 200
+        timeout: 5
+      register: health_check
+      ignore_errors: yes
+      tags: [health]
+
+    - name: "Display salome service status"
+      debug:
+        msg:
+          - "=========================================="
+          - "Salome Server Status"
+          - "=========================================="
+          - "{% for item in service_status.results %}"
+          - "{{ item.item.name }}: {{ 'RUNNING' if item.status.ActiveState == 'active' else 'STOPPED' }}"
+          - "{% endfor %}"
+      tags: [summary]
+
+# ============================================
+# Final Summary
+# ============================================
+- name: Generate Final Report
+  hosts: localhost
+  gather_facts: no
+  
+  tasks:
+    - name: "Display verification summary"
+      debug:
+        msg:
+          - "=========================================="
+          - "✅ Server Verification Complete"
+          - "=========================================="
+          - ""
+          - "Run with specific tags:"
+          - "  --tags system    : System checks only"
+          - "  --tags services  : Service status only"
+          - "  --tags ports     : Port checks only"
+          - "  --tags health    : Health endpoints only"
+          - ""
+          - "Check logs:"
+          - "  Backend: journalctl -u backendserver -f"
+          - "  Salome: journalctl -u salome-fastapi -f"
+          - "=========================================="

@@ -1,19 +1,37 @@
-# - hosts: all
-#   roles:
-#     - common
+---
+# Main site playbook for MEK-LAB Infrastructure
+# This playbook orchestrates the entire infrastructure.
 
-# - hosts: backend:salome
-#   roles:
-#     - node_exporter
-
-- hosts: salome
+- name: System Setup (All Hosts)
+  hosts: backend,salome
+  become: yes
   roles:
-    - prometheus
-    - salome_fastapi
+    - common
+    - node_exporter
     - promtail
 
-- hosts: backend
+- name: Backend Server Setup
+  hosts: backend
+  become: yes
   roles:
+    - nginx
+    - prometheus
     - loki
     - grafana
-    - promtail_backend
+  tasks:
+    - name: Deploy Python applications
+      include_role:
+        name: python_app
+      vars:
+        app_name: "{{ item.name }}"
+        app_port: "{{ item.port }}"
+        app_repo_url: "{{ item.repo_url }}"
+        app_branch: "{{ item.branch }}"
+        app_description: "{{ item.description }}"
+      loop: "{{ python_apps }}"
+
+- name: Salome Server Setup
+  hosts: salome
+  become: yes
+  roles:
+    - salome_fastapi

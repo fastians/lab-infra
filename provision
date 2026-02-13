@@ -1,0 +1,80 @@
+#!/bin/bash
+# Quick provisioning wrapper script
+# Usage: ./provision <server> [options]
+
+set -e
+
+INVENTORY="inventories/prod/hosts.ini"
+
+show_help() {
+    cat << EOF
+Server Provisioning Tool
+
+Usage: ./provision <command> [options]
+
+Commands:
+  salome              Provision Salome server from scratch
+  backend             Provision Backend server from scratch
+  verify              Verify all servers health
+  check <server>      Check specific server (backend-server or salome-server)
+
+Options:
+  --tags <tags>       Run only specific tags (e.g., --tags service,env)
+  --skip-tags <tags>  Skip specific tags
+  --check             Dry run (don't make changes)
+  -v                  Verbose output
+
+Examples:
+  ./provision salome                    # Full Salome provisioning
+  ./provision backend --tags monitoring # Only install monitoring
+  ./provision verify                    # Check all servers
+  ./provision check backend-server      # Check backend server only
+
+Available Tags:
+  system, dependencies, user, directories, git, python, venv,
+  env, service, deploy-script, nginx, monitoring, health-check
+
+EOF
+}
+
+case "$1" in
+    salome)
+        shift
+        echo "🚀 Provisioning Salome Server..."
+        ansible-playbook -i "$INVENTORY" playbooks/provision-salome.yml "$@"
+        ;;
+    
+    backend)
+        shift
+        echo "🚀 Provisioning Backend Server..."
+        ansible-playbook -i "$INVENTORY" playbooks/provision-backend.yml "$@"
+        ;;
+    
+    verify)
+        shift
+        echo "🔍 Verifying All Servers..."
+        ansible-playbook -i "$INVENTORY" playbooks/verify-servers.yml "$@"
+        ;;
+    
+    check)
+        if [ -z "$2" ]; then
+            echo "❌ Error: Please specify server (backend-server or salome-server)"
+            exit 1
+        fi
+        SERVER="$2"
+        shift 2
+        echo "🔍 Checking $SERVER..."
+        ansible-playbook -i "$INVENTORY" playbooks/verify-servers.yml --limit "$SERVER" "$@"
+        ;;
+    
+    help|--help|-h)
+        show_help
+        ;;
+    
+    *)
+        echo "❌ Error: Unknown command '$1'"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

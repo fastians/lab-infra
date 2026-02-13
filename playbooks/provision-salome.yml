@@ -1,0 +1,69 @@
+---
+# Complete Salome Server Provisioning
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/provision-salome.yml
+
+- name: Provision Salome Server
+  hosts: salome-server
+  become: yes
+
+  tasks:
+    # ============================================
+    # STEP 1: Main Application Role
+    # ============================================
+    - name: "STEP 1 - Apply Salome FastAPI Role"
+      include_role:
+        name: salome_fastapi
+      tags: [app, salome]
+
+    # ============================================
+    # STEP 2: Monitoring (Promtail)
+    # ============================================
+    - name: "STEP 2 - Install Promtail"
+      include_role:
+        name: promtail
+      tags: [monitoring]
+
+    # ============================================
+    # STEP 3: Health Check
+    # ============================================
+    - name: "STEP 3.1 - Wait for service to be ready"
+      wait_for:
+        port: 8000
+        host: 127.0.0.1
+        delay: 2
+        timeout: 30
+      tags: [health-check]
+
+    - name: "STEP 3.2 - Check service health endpoint"
+      uri:
+        url: "http://127.0.0.1:8000/health"
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 2
+      tags: [health-check]
+
+    - name: "STEP 3.3 - Display health check result"
+      debug:
+        msg: "✅ Salome service is healthy!"
+      when: health_check.status == 200
+      tags: [health-check]
+
+  # ============================================
+  # POST-PROVISION SUMMARY
+  # ============================================
+  post_tasks:
+    - name: "Display provisioning summary"
+      debug:
+        msg:
+          - "=========================================="
+          - "✅ Salome Server Provisioning Complete!"
+          - "=========================================="
+          - "Service: salome-fastapi"
+          - "Monitoring: Promtail"
+          - "Next Steps:"
+          - "1. Configure SSL: sudo certbot --nginx -d salome.mek-lab.com"
+          - "2. Check logs: journalctl -u salome-fastapi -f"
+          - "3. Deploy updates: ./deploy salome-fastapi main"
+          - "=========================================="
+      tags: [always]

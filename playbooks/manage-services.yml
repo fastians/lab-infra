@@ -2,6 +2,27 @@
 # Manage systemd service files
 # Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/manage-services.yml
 
-- hosts: backend:salome
+- hosts: backend
+  gather_facts: false
+  tasks:
+    - name: Manage Python application services
+      include_role:
+        name: python_app
+      vars:
+        app_name: "{{ item.name }}"
+        app_port: "{{ item.port }}"
+        app_repo_url: "{{ item.repo_url }}"
+        app_branch: "{{ item.branch }}"
+        app_description: "{{ item.description }}"
+      loop: "{{ python_apps }}"
+
+- hosts: backend
+  gather_facts: false
   roles:
-    - app_services
+    - { role: prometheus, tags: prometheus }
+    - { role: nginx, tags: nginx }
+
+- hosts: salome
+  gather_facts: false
+  roles:
+    - salome_fastapi

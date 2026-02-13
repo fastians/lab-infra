@@ -1,0 +1,4 @@
+#!/bin/bash
+# Sync deployment scripts to servers
+echo "📦 Syncing deployment scripts to servers..."
+ansible-playbook -i inventories/prod/hosts.ini playbooks/sync-scripts.yml

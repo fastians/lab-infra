@@ -37,9 +37,9 @@
     mode: '0755'
   become: yes
 
-- name: Configure promtail
+- name: Create promtail configuration
   template:
-    src: promtail-config.yml.j2
+    src: "{{ promtail_config_template }}"
     dest: /etc/promtail/config.yml
     owner: promtail
     group: promtail

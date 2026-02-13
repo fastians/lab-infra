@@ -1,23 +1,23 @@
 ---
 # Manual deployment playbook with branch support
-# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/deploy.yml -e service=mek_lab_backend -e branch=main
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/deploy.yml -e service=backendserver -e branch=main
 
 - hosts: "{{ target | default('backend') }}"
   vars:
-    service: "{{ service | default('mek_lab_backend') }}"
+    service: "{{ service | default('backendserver') }}"
     branch: "{{ branch | default('main') }}"
     script_map:
-      mek_lab_backend: "/home/mateen_fastians/.deploy/mek_lab_backend.sh"
+      backendserver: "/home/mateen_fastians/.deploy/backendserver.sh"
       geoserver: "/home/mateen_fastians/.deploy/geoserver.sh"
-      meklab-llm: "/home/mateen_fastians/.deploy/meklab-llm.sh"
+      llmserver: "/home/mateen_fastians/.deploy/llmserver.sh"
       salome-fastapi: "/home/mateen_fastians/opt/deploy.sh"
   
   tasks:
     - name: Validate service name
       assert:
         that:
-          - service in ['mek_lab_backend', 'geoserver', 'meklab-llm', 'salome-fastapi']
-        fail_msg: "Invalid service. Must be one of: mek_lab_backend, geoserver, meklab-llm, salome-fastapi"
+          - service in ['backendserver', 'geoserver', 'llmserver', 'salome-fastapi']
+        fail_msg: "Invalid service. Must be one of: backendserver, geoserver, llmserver, salome-fastapi"
 
     - name: Deploy {{ service }} from branch {{ branch }}
       shell: "{{ script_map[service] }} {{ branch }}"

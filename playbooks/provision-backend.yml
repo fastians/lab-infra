@@ -1,0 +1,118 @@
+---
+# Complete Backend Server Provisioning
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/provision-backend.yml
+
+- name: Provision Backend Server
+  hosts: backend-server
+  become: yes
+  vars:
+    app_user: mateen_fastians
+
+  tasks:
+    # ============================================
+    # STEP 1: Common & System Setup
+    # ============================================
+    - name: "STEP 1 - Install common system packages"
+      apt:
+        name:
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+          - build-essential
+        state: present
+        update_cache: yes
+      tags: [system, dependencies]
+
+    # ============================================
+    # STEP 2: Nginx Configuration
+    # ============================================
+    - name: "STEP 2 - Configure Nginx"
+      include_role:
+        name: nginx
+      tags: [system, nginx]
+
+    # ============================================
+    # STEP 3: Application Roles (Generic)
+    # ============================================
+    - name: "STEP 3 - Deploy Python applications"
+      include_role:
+        name: python_app
+      vars:
+        app_name: "{{ item.name }}"
+        app_port: "{{ item.port }}"
+        app_repo_url: "{{ item.repo_url }}"
+        app_branch: "{{ item.branch }}"
+        app_description: "{{ item.description }}"
+      loop: "{{ python_apps }}"
+      tags: [app]
+
+    # ============================================
+    # STEP 3: Monitoring Stack
+    # ============================================
+    - name: "STEP 3.1 - Install Prometheus"
+      include_role:
+        name: prometheus
+      tags: [monitoring, prometheus]
+
+    - name: "STEP 3.2 - Install Loki"
+      include_role:
+        name: loki
+      tags: [monitoring, loki]
+
+    - name: "STEP 3.3 - Install Grafana"
+      include_role:
+        name: grafana
+      tags: [monitoring, grafana]
+
+    - name: "STEP 3.4 - Install Promtail"
+      include_role:
+        name: promtail
+      tags: [monitoring, promtail]
+
+    # ============================================
+    # STEP 4: Health Checks
+    # ============================================
+    - name: "STEP 4.1 - Wait for services to be ready"
+      wait_for:
+        port: "{{ item.port }}"
+        host: 127.0.0.1
+        delay: 2
+        timeout: 30
+      loop: "{{ python_apps }}"
+      tags: [health-check]
+
+    - name: "STEP 4.2 - Check service health endpoints"
+      uri:
+        url: "http://127.0.0.1:{{ item.port }}/health"
+        status_code: 200
+      register: health_checks
+      retries: 5
+      delay: 2
+      loop: "{{ python_apps }}"
+      ignore_errors: yes
+      tags: [health-check]
+
+  # ============================================
+  # POST-PROVISION SUMMARY
+  # ============================================
+  post_tasks:
+    - name: "Display provisioning summary"
+      debug:
+        msg:
+          - "=========================================="
+          - "✅ Backend Server Provisioning Complete!"
+          - "=========================================="
+          - "Services Deployed:"
+          - "{% for app in python_apps %}  - {{ app.name }} (port {{ app.port }}){% endfor %}"
+          - ""
+          - "Monitoring Stack:"
+          - "  - Grafana: http://api.mek-lab.com:3000"
+          - "  - Prometheus: http://localhost:9090"
+          - "  - Loki: http://localhost:3100"
+          - ""
+          - "Next Steps:"
+          - "1. Configure SSL: sudo certbot --nginx -d api.mek-lab.com"
+          - "2. Access Grafana: http://api.mek-lab.com:3000"
+          - "3. Check logs: journalctl -u <service-name> -f"
+          - "=========================================="
+      tags: [always]

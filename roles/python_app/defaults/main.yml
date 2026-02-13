@@ -1,0 +1,14 @@
+---
+# Default variables for generic Python app role
+app_user: mateen_fastians
+app_python_version: "3.12"
+app_base_dir: "/home/{{ app_user }}/apps"
+app_branch: main
+app_workers: 1
+app_host: "127.0.0.1"
+
+# These must be provided by the caller:
+# app_name: Name of the application (e.g., backendserver)
+# app_port: Port number (e.g., 8000)
+# app_repo_url: Git repository URL
+# app_description: Service description (optional)

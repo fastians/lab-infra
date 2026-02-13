@@ -1,12 +1,73 @@
-- name: Ensure prometheus config directory exists
-  file:
-    path: /etc/prometheus
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+---
+- name: Create Prometheus group
+  group:
+    name: "{{ prometheus_group }}"
+    system: yes
+    state: present
   become: yes
 
+- name: Create Prometheus user
+  user:
+    name: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    system: yes
+    shell: "/sbin/nologin"
+    create_home: no
+    state: present
+  become: yes
+
+- name: Create Prometheus directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0755'
+  loop:
+    - "{{ prometheus_config_dir }}"
+    - "{{ prometheus_data_dir }}"
+  become: yes
+
+- name: Download Prometheus
+  get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz"
+    dest: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz"
+  become: yes
+  
+- name: Unarchive Prometheus
+  unarchive:
+    src: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz"
+    dest: "/tmp"
+    remote_src: yes
+  become: yes
+
+- name: Install Prometheus binaries
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}/{{ item }}"
+    dest: "{{ prometheus_install_dir }}/{{ item }}"
+    mode: '0755'
+    remote_src: yes
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+  loop:
+    - prometheus
+    - promtool
+  become: yes
+  notify: restart prometheus
+
+- name: Install Prometheus console libraries
+  copy:
+    src: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}/{{ item }}"
+    dest: "{{ prometheus_config_dir }}/"
+    mode: '0755'
+    remote_src: yes
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+  loop:
+    - consoles
+    - console_libraries
+  become: yes
+  notify: restart prometheus
 
 - name: Backup existing config (safety)
   copy:
@@ -16,16 +77,27 @@
   ignore_errors: yes
   become: yes
 
-
-- name: Copy Prometheus config from template
+- name: Configure Prometheus
   template:
     src: prometheus.yml.j2
-    dest: /etc/prometheus/prometheus.yml
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: '0644'
   become: yes
+  notify: restart prometheus
 
+- name: Configure Systemd service
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+  become: yes
+  notify: restart prometheus
 
-- name: Restart Prometheus
+- name: Start and enable Prometheus
   systemd:
     name: prometheus
-    state: restarted
+    state: started
+    enabled: yes
+    daemon_reload: yes
   become: yes

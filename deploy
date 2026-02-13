@@ -1,0 +1,34 @@
+#!/bin/bash
+# Simple deployment wrapper
+# Usage: ./deploy geoserver staging
+#        ./deploy mek_lab_backend main
+#        ./deploy salome-fastapi develop
+
+SERVICE=$1
+BRANCH=${2:-main}
+
+if [ -z "$SERVICE" ]; then
+    echo "Usage: ./deploy <service> [branch]"
+    echo ""
+    echo "Services:"
+    echo "  - mek_lab_backend"
+    echo "  - geoserver"
+    echo "  - meklab-llm"
+    echo "  - salome-fastapi"
+    echo ""
+    echo "Example: ./deploy geoserver staging"
+    exit 1
+fi
+
+# Determine target server
+if [ "$SERVICE" = "salome-fastapi" ]; then
+    TARGET="salome"
+else
+    TARGET="backend"
+fi
+
+echo "🚀 Deploying $SERVICE from branch $BRANCH..."
+ansible-playbook -i inventories/prod/hosts.ini playbooks/deploy.yml \
+    -e service=$SERVICE \
+    -e branch=$BRANCH \
+    -e target=$TARGET

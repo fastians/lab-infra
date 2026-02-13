@@ -1,0 +1,26 @@
+# Backend server group variables
+promtail_config_template: "promtail-backend-config.yml.j2"
+
+# Nginx Configuration
+nginx_server_name: "api.mek-lab.com"
+nginx_client_max_body_size: "500M"
+
+# Python application configurations
+python_apps:
+  - name: backendserver
+    port: 8000
+    repo_url: "{{ vault_mek_lab_backend_repo_url }}"
+    branch: main
+    description: "MEK-LAB Backend FastAPI Service"
+    
+  - name: geoserver
+    port: 8001
+    repo_url: "{{ vault_geoserver_engineering_repo_url }}"
+    branch: main
+    description: "GEO Server - Defeaturing Project"
+    
+  - name: llmserver
+    port: 8002
+    repo_url: "{{ vault_meklab_llm_repo_url }}"
+    branch: main
+    description: "MEK-LAB LLM Agent FastAPI Service"

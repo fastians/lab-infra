@@ -10,3 +10,9 @@ promtail_url: "https://github.com/grafana/loki/releases/download/v{{ promtail_ve
 
 prometheus_server: "{{ hostvars[groups['salome'][0]].ansible_host }}"
 loki_server: "{{ hostvars[groups['backend'][0]].ansible_host }}"
+
+# Application Repository URLs (defined in secrets.yml)
+mek_lab_backend_repo_url: "{{ vault_mek_lab_backend_repo_url }}"
+geoserver_repo_url: "{{ vault_geoserver_repo_url }}"
+meklab_llm_repo_url: "{{ vault_meklab_llm_repo_url }}"
+salome_repo_url: "{{ vault_salome_repo_url }}"

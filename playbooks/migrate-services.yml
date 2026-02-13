@@ -1,0 +1,68 @@
+---
+# Migrate from old service names to new service names
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/migrate-services.yml
+
+- name: Migrate Backend Services to New Names
+  hosts: backend-server
+  become: yes
+  
+  tasks:
+    - name: Display migration plan
+      debug:
+        msg:
+          - "=========================================="
+          - "Service Migration Plan:"
+          - "  mek_lab_backend → backendserver"
+          - "  meklab-llm → llmserver"
+          - "  geoserver → geoserver (no change)"
+          - "=========================================="
+          - "This will:"
+          - "  1. Stop old services"
+          - "  2. Remove old systemd files"
+          - "  3. Deploy new services with new names"
+          - "  4. Verify health"
+          - "=========================================="
+
+    - name: Pause for confirmation
+      pause:
+        prompt: "Press ENTER to continue with migration, or Ctrl+C to abort"
+
+    - name: Stop old services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      loop:
+        - mek_lab_backend
+        - meklab-llm
+      ignore_errors: yes
+
+    - name: Disable old services
+      systemd:
+        name: "{{ item }}"
+        enabled: no
+      loop:
+        - mek_lab_backend
+        - meklab-llm
+      ignore_errors: yes
+
+    - name: Remove old service files
+      file:
+        path: "/etc/systemd/system/{{ item }}.service"
+        state: absent
+      loop:
+        - mek_lab_backend
+        - meklab-llm
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Display next steps
+      debug:
+        msg:
+          - "=========================================="
+          - "✅ Old services stopped and removed"
+          - "=========================================="
+          - "Next: Run provision-backend.yml to deploy new services"
+          - "  ansible-playbook -i inventories/prod/hosts.ini playbooks/provision-backend.yml"
+          - "=========================================="

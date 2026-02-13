@@ -1,0 +1,110 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - python3
+      - python3-pip
+      - python3-venv
+      - git
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Create geoserver user
+  user:
+    name: "{{ geoserver_user }}"
+    shell: /bin/bash
+    create_home: yes
+    state: present
+  become: yes
+
+- name: Create application directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ geoserver_user }}"
+    group: "{{ geoserver_user }}"
+    mode: '0755'
+  loop:
+    - "/home/{{ geoserver_user }}/.apps"
+    - "{{ geoserver_app_dir }}"
+    - "/home/{{ geoserver_user }}/.deploy"
+  become: yes
+
+- name: Check if repo already exists
+  stat:
+    path: "{{ geoserver_app_dir }}/.git"
+  register: git_repo
+  become: yes
+  become_user: "{{ geoserver_user }}"
+
+- name: Clone repository
+  git:
+    repo: "{{ geoserver_repo_url }}"
+    dest: "{{ geoserver_app_dir }}"
+    version: "{{ geoserver_branch }}"
+    force: no
+  become: yes
+  become_user: "{{ geoserver_user }}"
+  when: not git_repo.stat.exists
+  notify: restart geoserver
+
+- name: Update repository
+  git:
+    repo: "{{ geoserver_repo_url }}"
+    dest: "{{ geoserver_app_dir }}"
+    version: "{{ geoserver_branch }}"
+    update: yes
+  become: yes
+  become_user: "{{ geoserver_user }}"
+  when: git_repo.stat.exists
+  notify: restart geoserver
+
+- name: Create Python virtual environment
+  command: "{{ geoserver_python_version }} -m venv {{ geoserver_app_dir }}/.venv"
+  args:
+    creates: "{{ geoserver_app_dir }}/.venv/bin/activate"
+  become: yes
+  become_user: "{{ geoserver_user }}"
+
+- name: Install Python dependencies
+  pip:
+    requirements: "{{ geoserver_app_dir }}/requirements.txt"
+    virtualenv: "{{ geoserver_app_dir }}/.venv"
+  become: yes
+  become_user: "{{ geoserver_user }}"
+  notify: restart geoserver
+
+- name: Create environment file
+  template:
+    src: env/geoserver.env.j2
+    dest: "{{ geoserver_app_dir }}/.env"
+    owner: "{{ geoserver_user }}"
+    group: "{{ geoserver_user }}"
+    mode: '0600'
+  become: yes
+  notify: restart geoserver
+
+- name: Create systemd service
+  template:
+    src: geoserver.service.j2
+    dest: /etc/systemd/system/geoserver.service
+  become: yes
+  notify: restart geoserver
+
+- name: Start and enable service
+  systemd:
+    name: geoserver
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  become: yes
+
+- name: Copy deployment script
+  copy:
+    src: "{{ playbook_dir }}/../deployment_scripts/geoserver.sh"
+    dest: "/home/{{ geoserver_user }}/.deploy/geoserver.sh"
+    owner: "{{ geoserver_user }}"
+    group: "{{ geoserver_user }}"
+    mode: '0750'
+  become: yes
