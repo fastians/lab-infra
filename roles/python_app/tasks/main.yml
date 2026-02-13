@@ -27,6 +27,18 @@
     group: "{{ app_user }}"
     mode: '0755'
   become: yes
+- name: Create extra application directories
+  file:
+    path: "{{ app_base_dir }}/{{ app_name }}/{{ extra_dir }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: '0755'
+  loop: "{{ app_extra_dirs }}"
+  loop_control:
+    loop_var: extra_dir
+  become: yes
+  when: app_extra_dirs | default([]) | length > 0
 
 - name: Check if repository already exists
   stat:
@@ -66,7 +78,7 @@
 
 - name: Install Python dependencies
   pip:
-    requirements: "{{ app_base_dir }}/{{ app_name }}/requirements.txt"
+    requirements: "{{ app_base_dir }}/{{ app_name }}/{{ app_requirements_path }}"
     virtualenv: "{{ app_base_dir }}/{{ app_name }}/.venv"
     virtualenv_command: "python{{ app_python_version }} -m venv"
   become: yes

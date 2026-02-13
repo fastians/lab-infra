@@ -7,7 +7,8 @@ config_files/env/*.env
 .vault_password
 
 # Secrets
-group_vars/secrets.yml
+**/secrets.yml
+**/secrets.example.yml
 
 # Backups
 backups/

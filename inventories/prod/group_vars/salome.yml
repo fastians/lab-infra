@@ -1,0 +1,21 @@
+# Salome server group variables
+promtail_config_template: "promtail-config.yml.j2"
+
+# Nginx Configuration
+nginx_server_name: "salome.mek-lab.com"
+nginx_client_max_body_size: "10M"
+nginx_template: "salome-nginx.conf.j2"
+nginx_config_name: "salome.conf"
+
+# Python application configurations
+python_apps:
+  - name: salomeserver
+    port: 8000
+    repo_url: "{{ vault_salome_engineering_repo_url }}"
+    branch: main
+    description: "MEK-LAB Salome FastAPI Service"
+    app_base_dir: "/home/mateen_fastians/opt/MEK_LAB_SALOME"
+    app_extra_dirs:
+      - "job_scripts"
+      - "job_outputs"
+      - "bundles"

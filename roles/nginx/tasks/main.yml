@@ -10,8 +10,8 @@
 
 - name: Create nginx sites-available config
   template:
-    src: backend-nginx.conf.j2
-    dest: /etc/nginx/sites-available/mek-lab.conf
+    src: "{{ nginx_template }}"
+    dest: "/etc/nginx/sites-available/{{ nginx_config_name }}"
     owner: root
     group: root
     mode: '0644'
@@ -19,8 +19,8 @@
 
 - name: Enable nginx site
   file:
-    src: /etc/nginx/sites-available/mek-lab.conf
-    dest: /etc/nginx/sites-enabled/mek-lab.conf
+    src: "/etc/nginx/sites-available/{{ nginx_config_name }}"
+    dest: "/etc/nginx/sites-enabled/{{ nginx_config_name }}"
     state: link
   notify: reload nginx
 

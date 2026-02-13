@@ -9,7 +9,7 @@ Group={{ app_user }}
 WorkingDirectory={{ app_base_dir }}/{{ app_name }}
 Environment="PATH={{ app_base_dir }}/{{ app_name }}/.venv/bin"
 EnvironmentFile={{ app_base_dir }}/{{ app_name }}/.env
-ExecStart={{ app_base_dir }}/{{ app_name }}/.venv/bin/uvicorn main:app --host {{ app_host }} --port {{ app_port }} --workers {{ app_workers }}
+ExecStart={{ app_base_dir }}/{{ app_name }}/.venv/bin/uvicorn {{ app_entry_point }} --host {{ app_host }} --port {{ app_port }} --workers {{ app_workers }}
 Restart=always
 RestartSec=10
 

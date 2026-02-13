@@ -24,5 +24,16 @@
 
 - hosts: salome
   gather_facts: false
-  roles:
-    - salome_fastapi
+  tasks:
+    - name: Manage Salome application services
+      include_role:
+        name: python_app
+      vars:
+        app_name: "{{ item.name }}"
+        app_port: "{{ item.port }}"
+        app_repo_url: "{{ item.repo_url }}"
+        app_branch: "{{ item.branch }}"
+        app_description: "{{ item.description }}"
+        app_base_dir: "{{ item.app_base_dir | default(omit) }}"
+        app_extra_dirs: "{{ item.app_extra_dirs | default(omit) }}"
+      loop: "{{ python_apps }}"

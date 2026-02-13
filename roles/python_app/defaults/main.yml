@@ -7,6 +7,11 @@ app_branch: main
 app_workers: 1
 app_host: "127.0.0.1"
 
+# Standard Structure (defaults)
+app_entry_point: "main:app"
+app_requirements_path: "requirements.txt"
+app_extra_dirs: []
+
 # These must be provided by the caller:
 # app_name: Name of the application (e.g., backendserver)
 # app_port: Port number (e.g., 8000)

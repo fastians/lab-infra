@@ -8,25 +8,42 @@
 
   tasks:
     # ============================================
-    # STEP 1: Main Application Role
+    # STEP 1: Infrastructure (Nginx)
     # ============================================
-    - name: "STEP 1 - Apply Salome FastAPI Role"
+    - name: "STEP 1 - Configure Nginx"
       include_role:
-        name: salome_fastapi
+        name: nginx
+      tags: [nginx]
+
+    # ============================================
+    # STEP 2: Main Application Role
+    # ============================================
+    - name: "STEP 2 - Deploy Salome applications"
+      include_role:
+        name: python_app
+      vars:
+        app_name: "{{ item.name }}"
+        app_port: "{{ item.port }}"
+        app_repo_url: "{{ item.repo_url }}"
+        app_branch: "{{ item.branch }}"
+        app_description: "{{ item.description }}"
+        app_base_dir: "{{ item.app_base_dir | default(omit) }}"
+        app_extra_dirs: "{{ item.app_extra_dirs | default([]) }}"
+      loop: "{{ python_apps }}"
       tags: [app, salome]
 
     # ============================================
-    # STEP 2: Monitoring (Promtail)
+    # STEP 3: Monitoring (Promtail)
     # ============================================
-    - name: "STEP 2 - Install Promtail"
+    - name: "STEP 3 - Install Promtail"
       include_role:
         name: promtail
       tags: [monitoring]
 
     # ============================================
-    # STEP 3: Health Check
+    # STEP 4: Health Check
     # ============================================
-    - name: "STEP 3.1 - Wait for service to be ready"
+    - name: "STEP 4.1 - Wait for service to be ready"
       wait_for:
         port: 8000
         host: 127.0.0.1
