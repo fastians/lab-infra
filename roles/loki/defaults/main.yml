@@ -1,4 +1,7 @@
 ---
+loki_version: "2.9.3"
+loki_url: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}/loki-linux-amd64.zip"
+
 # Vendor packaging: layout of the release archive (adapt if Grafana change it)
 loki_install_dir: "/tmp/loki_install"
 loki_download_filename: "loki.zip"

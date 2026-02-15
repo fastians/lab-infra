@@ -79,12 +79,18 @@
   become: yes
   notify: restart prometheus
 
+- name: Check if prometheus config already exists
+  stat:
+    path: "{{ prometheus_config_dir }}/prometheus.yml"
+  register: prometheus_config_stat
+  become: yes
+
 - name: Backup existing config (safety)
   copy:
-    src: /etc/prometheus/prometheus.yml
-    dest: /etc/prometheus/prometheus.yml.bak
+    src: "{{ prometheus_config_dir }}/prometheus.yml"
+    dest: "{{ prometheus_config_dir }}/prometheus.yml.bak"
     remote_src: yes
-  ignore_errors: yes
+  when: prometheus_config_stat.stat.exists
   become: yes
 
 - name: Configure Prometheus

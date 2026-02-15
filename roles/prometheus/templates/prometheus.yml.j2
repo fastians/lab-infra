@@ -25,7 +25,7 @@ scrape_configs:
 {% set backend_hosts = groups.get('backend', []) %}
 {% set salome_hosts = groups.get('salome', []) %}
 {% for host in monitor_hosts + backend_hosts + salome_hosts %}
-      - targets: ['{{ hostvars[host].ansible_host }}:9100']
+      - targets: ['{{ host }}:9100']
         labels:
           instance: {{ host }}
 {% endfor %}
@@ -64,7 +64,7 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
 {% for host in groups.get('backend', []) %}
-      - targets: ['{{ hostvars[host].ansible_host }}:8000']
+      - targets: ['{{ host }}:8000']
         labels:
           service: fastapi
           instance: {{ host }}
@@ -77,7 +77,7 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
 {% for host in groups.get('salome', []) %}
-      - targets: ['{{ hostvars[host].ansible_host }}:8000']
+      - targets: ['{{ host }}:8000']
         labels:
           service: salome-fastapi
           instance: {{ host }}

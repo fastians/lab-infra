@@ -7,7 +7,7 @@
   become: yes
 
 - name: Ensure download directory exists (prerequisite for get_url)
-  command: mkdir -p /tmp/node_exporter_install
+  command: mkdir -p "{{ node_exporter_install_dir }}"
   become: yes
   become_user: root
   changed_when: false
@@ -16,22 +16,22 @@
 - name: Download node exporter on remote
   get_url:
     url: "{{ node_exporter_url }}"
-    dest: /tmp/node_exporter_install/{{ node_exporter_filename }}
+    dest: "{{ node_exporter_install_dir }}/{{ node_exporter_filename }}"
     mode: '0644'
   become: yes
   become_user: root
 
 - name: Extract node exporter on remote
   unarchive:
-    src: /tmp/node_exporter_install/{{ node_exporter_filename }}
-    dest: /tmp/node_exporter_install
+    src: "{{ node_exporter_install_dir }}/{{ node_exporter_filename }}"
+    dest: "{{ node_exporter_install_dir }}"
     remote_src: yes
-    creates: "/tmp/node_exporter_install/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    creates: "{{ node_exporter_install_dir }}/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
   become: yes
 
 - name: Install node exporter binary
   copy:
-    src: "/tmp/node_exporter_install/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
+    src: "{{ node_exporter_install_dir }}/node_exporter-{{ node_exporter_version }}.linux-amd64/node_exporter"
     dest: /usr/local/bin/node_exporter
     mode: '0755'
     remote_src: yes
