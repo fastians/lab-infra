@@ -3,6 +3,30 @@ grafana_datasource_prometheus_url: "http://localhost:9090"
 grafana_datasource_loki_url: "http://localhost:3100"
 grafana_datasource_alertmanager_url: "http://localhost:9093"
 
+# Prometheus: scrape node_exporter (ports from hosts.ini: monitor, backend, salome only)
+prometheus_node_targets:
+  - target: "168.107.19.241:9100"
+    instance: monitor
+  - target: "34.50.12.114:9100"
+    instance: backend
+  - target: "34.64.150.177:9100"
+    instance: salome
+
+# Prometheus: scrape FastAPI /metrics (CLAUDE.md: backend = backendserver:8000, geoserver:8001, llmserver:8002; salome:8000)
+prometheus_fastapi_targets:
+  - target: "34.50.12.114:8000"
+    service: backendserver
+    instance: backend
+  - target: "34.50.12.114:8001"
+    service: geoserver
+    instance: backend
+  - target: "34.50.12.114:8002"
+    service: llmserver
+    instance: backend
+  - target: "34.64.150.177:8000"
+    service: salomeserver
+    instance: salome
+
 # Optional: URLs for blackbox HTTP probes (e.g. https://api.mek-lab.com/health)
 # blackbox_probe_targets:
 #   - https://api.mek-lab.com/health

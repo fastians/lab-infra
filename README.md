@@ -7,36 +7,35 @@ A professional-grade infrastructure-as-code (IaC) project designed to automate t
 Run by server name, one at a time; test, then the next:
 
 ```bash
-./provision monitoring-server
-./provision salome-server
-./provision backend-server
+./provision monitoring-server   # Monitor (Prometheus, Grafana, Loki, Alertmanager, Blackbox)
+./provision backend-server      # Backend: one machine, three FastAPI apps (backendserver, geoserver, llmserver)
+./provision salome-server      # Salome app server
 ```
 
-Each command runs `site.yml` limited to that host only.
+Or use short names to run provision playbooks: `./provision monitor`, `./provision backend`, `./provision salome`. Use `./provision verify` to check all servers; `./provision help` for more.
 
 ## 🌟 Key Features
 
-- **Automated Provisioning**: One-touch deployment for complex server clusters using Ansible.
-- **Microservices Orchestration**: Automated management of multiple FastAPI and AI-driven services.
-- **Enterprise Monitoring**: Full observability stack with **Prometheus**, **Grafana**, and **Loki** for real-time performance tracking and log aggregation.
-- **Secure by Design**: Best-practices implementation of secret management, automated SSL termination (Certbot), and secure Nginx reverse proxying.
-- **Scalable Architecture**: Modular design that supports multi-environment deployments (Production, Testing, Development).
+- **Automated Provisioning**: One-touch deployment for server clusters using Ansible (`./provision`, `site.yml`).
+- **Microservices Orchestration**: Backend server runs three FastAPI apps (ports 8000, 8001, 8002); Salome runs one (8000).
+- **Enterprise Monitoring**: Dedicated monitor server with **Prometheus**, **Grafana**, **Loki**, **Alertmanager**, **Blackbox Exporter**; **Promtail** and **Node Exporter** on app servers.
+- **Secure by Design**: Secret management, automated SSL (Certbot), Nginx reverse proxy.
+- **Scalable Architecture**: Modular roles; multi-environment inventories (prod, sample).
 
 ## 🛠️ Technology Stack
 
 - **Infrastructure**: Ansible, Linux (Ubuntu/Debian)
-- **Networking**: Nginx, Cloudflare, SSL/TLS
-- **Monitoring**: Prometheus, Grafana, Loki, Promtail
+- **Networking**: Nginx, Certbot, SSL/TLS
+- **Monitoring**: Prometheus, Grafana, Loki, Promtail, Alertmanager, Blackbox Exporter, Node Exporter
 - **Application**: Python (FastAPI), PostgreSQL
-- **Security**: SSH Key Management, Ansible Vault (Reference), Secret Scan Protection
+- **Security**: SSH key management, Ansible Vault, secret scan protection
 
 ## 📈 System Impact
 
-This project transforms manual server setup into a reliable, repeatable process. It ensures:
-- **Zero-Downtime Deployments**: Scripted rolling updates for applications.
-- **Centralized Visibility**: Unified dashboard for all server health metrics and logs.
-- **Developer Efficiency**: Simplified environment replication and management.
+- **Repeatable Setup**: Scripted server and app deployment.
+- **Centralized Visibility**: One dashboard for metrics and logs (Grafana → Prometheus/Loki).
+- **Developer Efficiency**: Simple replication and management via `./provision` and `./deploy`.
 
 ---
 
-*This project is used to manage the infrastructure, providing high availability for AI agents and engineering platforms.*
+*For AI/automation context (structure, commands, service names), see [CLAUDE.md](CLAUDE.md). For operations and architecture, see `docs/`.*

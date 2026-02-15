@@ -17,10 +17,18 @@ scrape_configs:
 
 
   # =====================
-  # NODE EXPORTERS (ALL SERVERS: monitor + backend + salome)
+  # NODE EXPORTERS (all servers)
+  # Set prometheus_node_targets in group_vars to override; else uses inventory groups.
   # =====================
-  - job_name: node_exporters
+  - job_name: nodes
     static_configs:
+{% if prometheus_node_targets is defined and prometheus_node_targets | length > 0 %}
+{% for item in prometheus_node_targets %}
+      - targets: ['{{ item.target }}']
+        labels:
+          instance: {{ item.instance }}
+{% endfor %}
+{% else %}
 {% set monitor_hosts = groups.get('monitoring', []) %}
 {% set backend_hosts = groups.get('backend', []) %}
 {% set salome_hosts = groups.get('salome', []) %}
@@ -29,6 +37,7 @@ scrape_configs:
         labels:
           instance: {{ host }}
 {% endfor %}
+{% endif %}
 
   # =====================
   # BLACKBOX EXPORTER (probe on monitor server)
@@ -58,27 +67,38 @@ scrape_configs:
 {% endif %}
 
   # =====================
-  # FASTAPI METRICS
+  # FASTAPI METRICS (backend: backendserver:8000, geoserver:8001, llmserver:8002 on one machine; salome:8000)
+  # Set prometheus_fastapi_targets in group_vars to list all app endpoints.
   # =====================
   - job_name: fastapi
     metrics_path: /metrics
     static_configs:
+{% if prometheus_fastapi_targets is defined and prometheus_fastapi_targets | length > 0 %}
+{% for item in prometheus_fastapi_targets %}
+      - targets: ['{{ item.target }}']
+        labels:
+          service: {{ item.service }}
+          instance: {{ item.instance }}
+{% endfor %}
+{% else %}
 {% for host in groups.get('backend', []) %}
       - targets: ['{{ host }}:8000']
         labels:
-          service: fastapi
-          instance: {{ host }}
+          service: backendserver
+          instance: backend
+      - targets: ['{{ host }}:8001']
+        labels:
+          service: geoserver
+          instance: backend
+      - targets: ['{{ host }}:8002']
+        labels:
+          service: llmserver
+          instance: backend
 {% endfor %}
-
-  # =====================
-  # SALOME FASTAPI
-  # =====================
-  - job_name: salome-fastapi
-    metrics_path: /metrics
-    static_configs:
 {% for host in groups.get('salome', []) %}
       - targets: ['{{ host }}:8000']
         labels:
-          service: salome-fastapi
-          instance: {{ host }}
+          service: salomeserver
+          instance: salome
 {% endfor %}
+{% endif %}

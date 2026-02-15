@@ -5,18 +5,21 @@
       - software-properties-common
     state: present
   become: yes
+  tags: [grafana]
 
 - name: Add Grafana GPG key
   apt_key:
     url: https://apt.grafana.com/gpg.key
     state: present
   become: yes
+  tags: [grafana]
 
 - name: Add Grafana repository
   apt_repository:
     repo: deb https://apt.grafana.com stable main
     state: present
   become: yes
+  tags: [grafana]
 
 - name: Install Grafana
   apt:
@@ -24,6 +27,18 @@
     state: present
     update_cache: yes
   become: yes
+  tags: [grafana]
+
+- name: Configure Grafana
+  template:
+    src: grafana.ini.j2
+    dest: /etc/grafana/grafana.ini
+    owner: root
+    group: grafana
+    mode: '0644'
+  notify: restart grafana
+  become: yes
+  tags: [grafana]
 
 - name: Configure Grafana datasources
   template:
@@ -34,6 +49,7 @@
     mode: '0644'
   become: yes
   notify: restart grafana
+  tags: [grafana]
 
 - name: Start Grafana
   systemd:
@@ -41,3 +57,4 @@
     enabled: yes
     state: started
   become: yes
+  tags: [grafana]
