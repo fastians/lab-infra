@@ -48,7 +48,7 @@
 
     - name: Sync salome deployment script
       copy:
-        src: "../deployment_scripts/salome-fastapi.sh"
+        src: "../deployment_scripts/salomeserver.sh"
         dest: "/home/mateen_fastians/opt/deploy.sh"
         owner: mateen_fastians
         mode: '0750'

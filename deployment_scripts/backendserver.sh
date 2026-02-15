@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-SERVICE_NAME="salome-fastapi"
-APP_DIR="/home/mateen_fastians/opt/MEK_LAB_SALOME/app"
-SERVICE_UNIT="salome-fastapi.service"
+SERVICE_NAME="backendserver"
+APP_DIR="/home/mateen_fastians/apps/backendserver"
+SERVICE_UNIT="backendserver.service"
 PORT="8000"
 BRANCH="${1:-main}"
 

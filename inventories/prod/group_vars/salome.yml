@@ -13,7 +13,7 @@ python_apps:
     port: 8000
     repo_url: "{{ vault_salome_engineering_repo_url }}"
     branch: main
-    description: "MEK-LAB Salome FastAPI Service"
+    description: "Salome FastAPI Service"
     app_base_dir: "/home/mateen_fastians/opt/MEK_LAB_SALOME"
     app_extra_dirs:
       - "job_scripts"

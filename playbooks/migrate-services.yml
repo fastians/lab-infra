@@ -11,16 +11,15 @@
       debug:
         msg:
           - "=========================================="
-          - "Service Migration Plan:"
-          - "  mek_lab_backend → backendserver"
-          - "  meklab-llm → llmserver"
-          - "  geoserver → geoserver (no change)"
+          - "Service names (canonical): backendserver, geoserver, llmserver"
+          - "This playbook removes OLD units if present:"
+          - "  mek_lab_backend.service, meklab-llm.service"
           - "=========================================="
           - "This will:"
-          - "  1. Stop old services"
-          - "  2. Remove old systemd files"
-          - "  3. Deploy new services with new names"
-          - "  4. Verify health"
+          - "  1. Stop old services (mek_lab_backend, meklab-llm)"
+          - "  2. Remove old systemd unit files"
+          - "  3. Reload systemd"
+          - "Next: re-provision backend to deploy backendserver/llmserver"
           - "=========================================="
 
     - name: Pause for confirmation

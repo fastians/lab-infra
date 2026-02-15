@@ -48,12 +48,12 @@ scrape_configs:
             - labels:
                 level:
 
-  # MEK-LAB Backend from journalctl
-  - job_name: meklab-backend-journal
+  # Backend from journalctl
+  - job_name: backendserver-journal
     journal:
       max_age: 12h
       labels:
-        job: meklab-backend
+        job: backendserver
         host: backend
     relabel_configs:
       - source_labels: ['__journal__systemd_unit']
@@ -71,7 +71,7 @@ scrape_configs:
                 level:
                 logger:
 
-  # MEK-LAB LLM from journalctl
+  # LLM server from journalctl
   - job_name: llmserver-journal
     journal:
       max_age: 12h

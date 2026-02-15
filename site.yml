@@ -1,5 +1,5 @@
 ---
-# Main site playbook for MEK-LAB Infrastructure
+# Main site playbook for lab infrastructure
 # Monitor server (brain + probe) | Backend/Salome = app servers only.
 
 - name: Monitor Server (brain + probe)

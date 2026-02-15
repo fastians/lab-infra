@@ -88,7 +88,7 @@
           - "Promtail: ships logs to Loki on monitor server"
           - "Next Steps:"
           - "1. Configure SSL: sudo certbot --nginx -d salome.mek-lab.com"
-          - "2. Check logs: journalctl -u salome-fastapi -f"
-          - "3. Deploy updates: ./deploy salome-fastapi main"
+          - "2. Check logs: journalctl -u salomeserver -f"
+          - "3. Deploy updates: ./deploy salomeserver main"
           - "=========================================="
       tags: [always]

@@ -10,14 +10,14 @@
       backendserver: "/home/mateen_fastians/.deploy/backendserver.sh"
       geoserver: "/home/mateen_fastians/.deploy/geoserver.sh"
       llmserver: "/home/mateen_fastians/.deploy/llmserver.sh"
-      salome-fastapi: "/home/mateen_fastians/opt/deploy.sh"
+      salomeserver: "/home/mateen_fastians/opt/deploy.sh"
   
   tasks:
     - name: Validate service name
       assert:
         that:
-          - service in ['backendserver', 'geoserver', 'llmserver', 'salome-fastapi']
-        fail_msg: "Invalid service. Must be one of: backendserver, geoserver, llmserver, salome-fastapi"
+          - service in ['backendserver', 'geoserver', 'llmserver', 'salomeserver']
+        fail_msg: "Invalid service. Must be one of: backendserver, geoserver, llmserver, salomeserver"
 
     - name: Deploy {{ service }} from branch {{ branch }}
       shell: "{{ script_map[service] }} {{ branch }}"

@@ -1,8 +1,9 @@
 #!/bin/bash
 # Simple deployment wrapper
-# Usage: ./deploy geoserver staging
-#        ./deploy mek_lab_backend main
-#        ./deploy salome-fastapi develop
+# Usage: ./deploy backendserver main
+#        ./deploy geoserver staging
+#        ./deploy llmserver main
+#        ./deploy salomeserver develop
 
 SERVICE=$1
 BRANCH=${2:-main}
@@ -11,17 +12,17 @@ if [ -z "$SERVICE" ]; then
     echo "Usage: ./deploy <service> [branch]"
     echo ""
     echo "Services:"
-    echo "  - mek_lab_backend"
+    echo "  - backendserver"
     echo "  - geoserver"
-    echo "  - meklab-llm"
-    echo "  - salome-fastapi"
+    echo "  - llmserver"
+    echo "  - salomeserver"
     echo ""
-    echo "Example: ./deploy geoserver staging"
+    echo "Example: ./deploy backendserver main"
     exit 1
 fi
 
 # Determine target server
-if [ "$SERVICE" = "salome-fastapi" ]; then
+if [ "$SERVICE" = "salomeserver" ]; then
     TARGET="salome"
 else
     TARGET="backend"

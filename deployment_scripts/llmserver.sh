@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-SERVICE_NAME="mek_lab_backend"
-APP_DIR="/home/mateen_fastians/.apps/MEK_LAB_BACKEND"
-SERVICE_UNIT="mek_lab_backend.service"
-PORT="8000"
+SERVICE_NAME="llmserver"
+APP_DIR="/home/mateen_fastians/apps/llmserver"
+SERVICE_UNIT="llmserver.service"
+PORT="8002"
 BRANCH="${1:-main}"
 
 echo "[DEPLOY] $SERVICE_NAME ($BRANCH)"
