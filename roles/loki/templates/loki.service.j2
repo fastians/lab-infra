@@ -1,0 +1,11 @@
+[Unit]
+Description=Loki
+After=network.target
+
+[Service]
+User=loki
+ExecStart={{ loki_binary_path }} -config.file=/etc/loki/config.yml
+Restart=always
+
+[Install]
+WantedBy=default.target

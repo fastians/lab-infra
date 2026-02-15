@@ -1,8 +1,20 @@
 ---
 # Main site playbook for MEK-LAB Infrastructure
-# This playbook orchestrates the entire infrastructure.
+# Monitor server (brain + probe) | Backend/Salome = app servers only.
 
-- name: System Setup (All Hosts)
+- name: Monitor Server (brain + probe)
+  hosts: monitoring
+  become: yes
+  roles:
+    - common
+    - node_exporter
+    - prometheus
+    - loki
+    - grafana
+    - alertmanager
+    - blackbox_exporter
+
+- name: Application Servers (backend + salome)
   hosts: backend,salome
   become: yes
   roles:
@@ -10,14 +22,11 @@
     - node_exporter
     - promtail
 
-- name: Backend Server Setup
+- name: Backend Server (apps only)
   hosts: backend
   become: yes
   roles:
     - nginx
-    - prometheus
-    - loki
-    - grafana
   tasks:
     - name: Deploy Python applications
       include_role:
@@ -32,7 +41,7 @@
         app_extra_dirs: "{{ item.app_extra_dirs | default([]) }}"
       loop: "{{ python_apps }}"
 
-- name: Salome Server Setup
+- name: Salome Server (apps only)
   hosts: salome
   become: yes
   roles:

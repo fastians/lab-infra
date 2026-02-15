@@ -8,17 +8,33 @@
 
   tasks:
     # ============================================
-    # STEP 1: Infrastructure (Nginx)
+    # STEP 1: Common & Monitoring Agents
     # ============================================
-    - name: "STEP 1 - Configure Nginx"
+    - name: "STEP 1 - Apply common role"
+      include_role:
+        name: common
+      tags: [system]
+
+    - name: "STEP 2 - Install Node Exporter and Promtail"
+      include_role:
+        name: "{{ item }}"
+      loop:
+        - node_exporter
+        - promtail
+      tags: [monitoring]
+
+    # ============================================
+    # STEP 2: Infrastructure (Nginx)
+    # ============================================
+    - name: "STEP 3 - Configure Nginx"
       include_role:
         name: nginx
       tags: [nginx]
 
     # ============================================
-    # STEP 2: Main Application Role
+    # STEP 3: Main Application Role
     # ============================================
-    - name: "STEP 2 - Deploy Salome applications"
+    - name: "STEP 4 - Deploy Salome applications"
       include_role:
         name: python_app
       vars:
@@ -33,17 +49,9 @@
       tags: [app, salome]
 
     # ============================================
-    # STEP 3: Monitoring (Promtail)
-    # ============================================
-    - name: "STEP 3 - Install Promtail"
-      include_role:
-        name: promtail
-      tags: [monitoring]
-
-    # ============================================
     # STEP 4: Health Check
     # ============================================
-    - name: "STEP 4.1 - Wait for service to be ready"
+    - name: "STEP 5.1 - Wait for service to be ready"
       wait_for:
         port: 8000
         host: 127.0.0.1
@@ -51,7 +59,7 @@
         timeout: 30
       tags: [health-check]
 
-    - name: "STEP 3.2 - Check service health endpoint"
+    - name: "STEP 5.2 - Check service health endpoint"
       uri:
         url: "http://127.0.0.1:8000/health"
         status_code: 200
@@ -60,7 +68,7 @@
       delay: 2
       tags: [health-check]
 
-    - name: "STEP 3.3 - Display health check result"
+    - name: "STEP 5.3 - Display health check result"
       debug:
         msg: "✅ Salome service is healthy!"
       when: health_check.status == 200
@@ -76,8 +84,8 @@
           - "=========================================="
           - "✅ Salome Server Provisioning Complete!"
           - "=========================================="
-          - "Service: salome-fastapi"
-          - "Monitoring: Promtail"
+          - "Service: salomeserver (FastAPI)"
+          - "Promtail: ships logs to Loki on monitor server"
           - "Next Steps:"
           - "1. Configure SSL: sudo certbot --nginx -d salome.mek-lab.com"
           - "2. Check logs: journalctl -u salome-fastapi -f"

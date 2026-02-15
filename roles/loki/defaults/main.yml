@@ -1,0 +1,8 @@
+---
+# Vendor packaging: layout of the release archive (adapt if Grafana change it)
+loki_install_dir: "/tmp/loki_install"
+loki_download_filename: "loki.zip"
+# Binary name inside the zip (from Grafana loki-linux-amd64.zip)
+loki_extracted_binary: "loki-linux-amd64"
+# Our chosen install path
+loki_binary_path: "/usr/local/bin/loki"

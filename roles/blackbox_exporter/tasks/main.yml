@@ -1,0 +1,80 @@
+---
+- name: Create blackbox_exporter group
+  group:
+    name: "{{ blackbox_exporter_group }}"
+    state: present
+  become: yes
+
+- name: Create blackbox_exporter user
+  user:
+    name: "{{ blackbox_exporter_user }}"
+    group: "{{ blackbox_exporter_group }}"
+    shell: /usr/sbin/nologin
+    system: yes
+    create_home: no
+  become: yes
+
+- name: Create blackbox_exporter config directory
+  file:
+    path: "{{ blackbox_exporter_config_dir }}"
+    state: directory
+    owner: "{{ blackbox_exporter_user }}"
+    group: "{{ blackbox_exporter_group }}"
+    mode: '0755'
+  become: yes
+
+- name: Ensure download directory exists (prerequisite for get_url)
+  command: mkdir -p /tmp/blackbox_exporter_install
+  become: yes
+  become_user: root
+  changed_when: false
+  tags: [always]
+
+- name: Download Blackbox Exporter on remote
+  get_url:
+    url: "https://github.com/prometheus/blackbox_exporter/releases/download/v{{ blackbox_exporter_version }}/blackbox_exporter-{{ blackbox_exporter_version }}.linux-amd64.tar.gz"
+    dest: /tmp/blackbox_exporter_install/blackbox_exporter-{{ blackbox_exporter_version }}.linux-amd64.tar.gz
+    mode: '0644'
+  become: yes
+  become_user: root
+
+- name: Extract Blackbox Exporter on remote
+  unarchive:
+    src: /tmp/blackbox_exporter_install/blackbox_exporter-{{ blackbox_exporter_version }}.linux-amd64.tar.gz
+    dest: /tmp/blackbox_exporter_install
+    remote_src: yes
+    creates: "/tmp/blackbox_exporter_install/blackbox_exporter-{{ blackbox_exporter_version }}.linux-amd64/blackbox_exporter"
+  become: yes
+
+- name: Install Blackbox Exporter binary
+  copy:
+    src: "/tmp/blackbox_exporter_install/blackbox_exporter-{{ blackbox_exporter_version }}.linux-amd64/blackbox_exporter"
+    dest: "{{ blackbox_exporter_install_dir }}/blackbox_exporter"
+    mode: '0755'
+    remote_src: yes
+  become: yes
+
+- name: Configure Blackbox Exporter
+  template:
+    src: blackbox.yml.j2
+    dest: "{{ blackbox_exporter_config_dir }}/blackbox.yml"
+    owner: "{{ blackbox_exporter_user }}"
+    group: "{{ blackbox_exporter_group }}"
+    mode: '0644'
+  become: yes
+  notify: restart blackbox_exporter
+
+- name: Create Blackbox Exporter systemd service
+  template:
+    src: blackbox_exporter.service.j2
+    dest: /etc/systemd/system/blackbox_exporter.service
+  become: yes
+  notify: restart blackbox_exporter
+
+- name: Start Blackbox Exporter
+  systemd:
+    name: blackbox_exporter
+    daemon_reload: yes
+    enabled: yes
+    state: started
+  become: yes

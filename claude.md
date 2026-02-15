@@ -6,15 +6,16 @@ Ansible infrastructure automation: monitoring, provisioning, deployment, configu
 1. **Provisioning**: Deploy complete servers from scratch (`site.yml` or `provision-*` playbooks)
 2. **Deployment**: Update applications with branch selection (`./deploy`)
 3. **Configuration**: Modular roles for `python_app`, `nginx`, and monitoring
-4. **Monitoring**: Prometheus, Grafana, Loki, Promtail (aggregated on Backend)
+4. **Monitoring**: Dedicated monitor server (brain + probe); Prometheus, Grafana, Loki, Alertmanager, Blackbox Exporter; Promtail on app servers only.
 
 ## Structure
 - `inventories/`: Environment specific configs (prod, sample)
-- `inventories/prod/group_vars/`: Production variables (all/all.yml, all/secrets.yml)
+- `inventories/prod/group_vars/`: Production variables (all/all.yml, all/secrets.yml, backend.yml, salome.yml, monitoring.yml)
 - `roles/`:
   - `python_app`: Generic role for all Python web services
-  - `nginx`: Automated Nginx configuration for backend
-  - `monitoring`: prometheus, grafana, loki, promtail, node_exporter
+  - `nginx`: Automated Nginx configuration for backend and salome
+  - `prometheus`, `grafana`, `loki`, `alertmanager`, `blackbox_exporter`: Monitoring stack (monitor server)
+  - `promtail`, `node_exporter`: Log/metric agents (app servers + monitor)
   - `common`: Base system setup
 - `playbooks/`: provision-*, deploy.yml, manage-services.yml, verify-servers.yml
 - `docs/`: Consolidated documentation (Architecture, Operations, Configuration)
@@ -22,8 +23,9 @@ Ansible infrastructure automation: monitoring, provisioning, deployment, configu
 ## Quick Commands
 ```bash
 # Provisioning
-./provision salome          # New Salome server
-./provision backend         # New Backend server
+./provision monitor         # Monitor server (brain + probe)
+./provision backend         # Backend app server
+./provision salome          # Salome app server
 ./provision verify          # Verify all servers
 
 # Deployment
@@ -36,12 +38,18 @@ ansible-playbook -i inventories/prod/hosts.ini playbooks/manage-services.yml
 ```
 
 ## Infrastructure Model
-- **backend-server** (api.mek-lab.com):
-  - Services: `backendserver`, `geoserver`, `llmserver`
-  - Monitoring: Full stack (Prometheus, Loki, Grafana)
-- **salome-server** (salome.mek-lab.com):
-  - Services: `salomeserver`
-  - Proxy: Nginx + Certbot
+- **Monitor server** (brain + probe):
+  - **Brain** (metrics + logs): Prometheus, Grafana, Loki, Alertmanager
+  - **Probe**: Blackbox Exporter
+  - Node Exporter, Promtail (optional, for monitor host logs)
+- **Backend server** (api.mek-lab.com) — Application servers:
+  - FastAPI: `backendserver`, `geoserver`, `llmserver`
+  - Promtail (ships logs to Loki on monitor)
+  - Nginx + Certbot
+- **Salome server** (salome.mek-lab.com) — Application servers:
+  - FastAPI: `salomeserver`
+  - Promtail (ships logs to Loki on monitor)
+  - Nginx + Certbot
 
 ## Standard Service Names
 - `backendserver` (port 8000)

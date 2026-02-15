@@ -4,10 +4,28 @@
     cache_valid_time: 3600
   become: yes
 
+- name: Check root filesystem free space (for upgrade)
+  shell: df -Pk / | tail -1 | awk '{print $4}'
+  register: root_free_kb
+  changed_when: false
+
 - name: Upgrade system packages
   apt:
     upgrade: dist
   become: yes
+  when: (root_free_kb.stdout | int) * 1024 > (apt_upgrade_min_free_bytes | default(536870912) | int)
+  ignore_errors: true
+  register: apt_upgrade_result
+
+- name: Warn when upgrade skipped (low disk)
+  debug:
+    msg: "Skipped apt upgrade on {{ inventory_hostname }}: root has less than {{ (apt_upgrade_min_free_bytes | default(536870912)) / (1024*1024) | int }}MB free. Free space and re-run."
+  when: (root_free_kb.stdout | int) * 1024 <= (apt_upgrade_min_free_bytes | default(536870912) | int)
+
+- name: Warn when upgrade failed (e.g. disk full)
+  debug:
+    msg: "Apt upgrade failed on {{ inventory_hostname }} (e.g. disk full). Fix the server and re-run."
+  when: apt_upgrade_result is defined and apt_upgrade_result is failed
 
 - name: Install base utilities
   apt:

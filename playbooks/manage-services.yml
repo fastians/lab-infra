@@ -2,7 +2,18 @@
 # Manage systemd service files
 # Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/manage-services.yml
 
-- hosts: backend
+- name: Manage Monitor Server (brain + probe)
+  hosts: monitoring
+  gather_facts: false
+  roles:
+    - { role: prometheus, tags: prometheus }
+    - { role: loki, tags: loki }
+    - { role: grafana, tags: grafana }
+    - { role: alertmanager, tags: alertmanager }
+    - { role: blackbox_exporter, tags: blackbox }
+
+- name: Manage Backend app services
+  hosts: backend
   gather_facts: false
   tasks:
     - name: Manage Python application services
@@ -19,10 +30,11 @@
 - hosts: backend
   gather_facts: false
   roles:
-    - { role: prometheus, tags: prometheus }
     - { role: nginx, tags: nginx }
+    - { role: promtail, tags: promtail }
 
-- hosts: salome
+- name: Manage Salome app services
+  hosts: salome
   gather_facts: false
   tasks:
     - name: Manage Salome application services
@@ -37,3 +49,9 @@
         app_base_dir: "{{ item.app_base_dir | default(omit) }}"
         app_extra_dirs: "{{ item.app_extra_dirs | default(omit) }}"
       loop: "{{ python_apps }}"
+
+- hosts: salome
+  gather_facts: false
+  roles:
+    - { role: nginx, tags: nginx }
+    - { role: promtail, tags: promtail }

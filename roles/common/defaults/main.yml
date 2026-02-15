@@ -1,0 +1,3 @@
+---
+# Skip apt upgrade when root free space is below this (bytes). 512MB default.
+apt_upgrade_min_free_bytes: 536870912

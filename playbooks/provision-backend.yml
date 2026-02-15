@@ -23,10 +23,23 @@
         update_cache: yes
       tags: [system, dependencies]
 
+    - name: "STEP 2 - Apply common role"
+      include_role:
+        name: common
+      tags: [system]
+
+    - name: "STEP 3 - Install Node Exporter and Promtail"
+      include_role:
+        name: "{{ item }}"
+      loop:
+        - node_exporter
+        - promtail
+      tags: [monitoring]
+
     # ============================================
     # STEP 2: Nginx Configuration
     # ============================================
-    - name: "STEP 2 - Configure Nginx"
+    - name: "STEP 4 - Configure Nginx"
       include_role:
         name: nginx
       tags: [system, nginx]
@@ -34,7 +47,7 @@
     # ============================================
     # STEP 3: Application Roles (Generic)
     # ============================================
-    - name: "STEP 3 - Deploy Python applications"
+    - name: "STEP 5 - Deploy Python applications"
       include_role:
         name: python_app
       vars:
@@ -45,29 +58,6 @@
         app_description: "{{ item.description }}"
       loop: "{{ python_apps }}"
       tags: [app]
-
-    # ============================================
-    # STEP 3: Monitoring Stack
-    # ============================================
-    - name: "STEP 3.1 - Install Prometheus"
-      include_role:
-        name: prometheus
-      tags: [monitoring, prometheus]
-
-    - name: "STEP 3.2 - Install Loki"
-      include_role:
-        name: loki
-      tags: [monitoring, loki]
-
-    - name: "STEP 3.3 - Install Grafana"
-      include_role:
-        name: grafana
-      tags: [monitoring, grafana]
-
-    - name: "STEP 3.4 - Install Promtail"
-      include_role:
-        name: promtail
-      tags: [monitoring, promtail]
 
     # ============================================
     # STEP 4: Health Checks
@@ -100,19 +90,13 @@
       debug:
         msg:
           - "=========================================="
-          - "✅ Backend Server Provisioning Complete!"
+          - "✅ Backend Server (Application) Provisioning Complete!"
           - "=========================================="
-          - "Services Deployed:"
-          - "{% for app in python_apps %}  - {{ app.name }} (port {{ app.port }}){% endfor %}"
-          - ""
-          - "Monitoring Stack:"
-          - "  - Grafana: http://api.mek-lab.com:3000"
-          - "  - Prometheus: http://localhost:9090"
-          - "  - Loki: http://localhost:3100"
+          - "Services: {% for app in python_apps %}{{ app.name }} ({{ app.port }}){% if not loop.last %}, {% endif %}{% endfor %}"
+          - "Promtail: ships logs to Loki on monitor server"
           - ""
           - "Next Steps:"
           - "1. Configure SSL: sudo certbot --nginx -d api.mek-lab.com"
-          - "2. Access Grafana: http://api.mek-lab.com:3000"
-          - "3. Check logs: journalctl -u <service-name> -f"
+          - "2. Check logs: journalctl -u <service-name> -f"
           - "=========================================="
       tags: [always]

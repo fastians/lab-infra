@@ -1,0 +1,91 @@
+---
+- name: Create alertmanager group
+  group:
+    name: "{{ alertmanager_group }}"
+    state: present
+  become: yes
+
+- name: Create alertmanager user
+  user:
+    name: "{{ alertmanager_user }}"
+    group: "{{ alertmanager_group }}"
+    shell: /usr/sbin/nologin
+    system: yes
+    create_home: no
+  become: yes
+
+- name: Create alertmanager directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ alertmanager_user }}"
+    group: "{{ alertmanager_group }}"
+    mode: '0755'
+  loop:
+    - "{{ alertmanager_config_dir }}"
+    - "{{ alertmanager_data_dir }}"
+  become: yes
+
+- name: Ensure download directory exists (prerequisite for get_url)
+  command: mkdir -p /tmp/alertmanager_install
+  become: yes
+  become_user: root
+  changed_when: false
+  tags: [always]
+
+- name: Download Alertmanager on remote
+  get_url:
+    url: "https://github.com/prometheus/alertmanager/releases/download/v{{ alertmanager_version }}/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz"
+    dest: /tmp/alertmanager_install/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
+    mode: '0644'
+  become: yes
+  become_user: root
+
+- name: Extract Alertmanager on remote
+  unarchive:
+    src: /tmp/alertmanager_install/alertmanager-{{ alertmanager_version }}.linux-amd64.tar.gz
+    dest: /tmp/alertmanager_install
+    remote_src: yes
+    creates: "/tmp/alertmanager_install/alertmanager-{{ alertmanager_version }}.linux-amd64/alertmanager"
+  become: yes
+
+- name: Install Alertmanager binary
+  copy:
+    src: "/tmp/alertmanager_install/alertmanager-{{ alertmanager_version }}.linux-amd64/alertmanager"
+    dest: "{{ alertmanager_install_dir }}/alertmanager"
+    mode: '0755'
+    remote_src: yes
+  become: yes
+
+- name: Install amtool binary
+  copy:
+    src: "/tmp/alertmanager_install/alertmanager-{{ alertmanager_version }}.linux-amd64/amtool"
+    dest: "{{ alertmanager_install_dir }}/amtool"
+    mode: '0755'
+    remote_src: yes
+  become: yes
+
+- name: Configure Alertmanager
+  template:
+    src: alertmanager.yml.j2
+    dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
+    owner: "{{ alertmanager_user }}"
+    group: "{{ alertmanager_group }}"
+    mode: '0644'
+  become: yes
+  notify: restart alertmanager
+
+- name: Create Alertmanager systemd service
+  template:
+    src: alertmanager.service.j2
+    dest: /etc/systemd/system/alertmanager.service
+  become: yes
+  notify: restart alertmanager
+
+- name: Start Alertmanager
+  systemd:
+    name: alertmanager
+    daemon_reload: yes
+    enabled: yes
+    state: started
+  become: yes

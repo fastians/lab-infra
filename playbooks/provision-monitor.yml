@@ -1,0 +1,97 @@
+---
+# Monitor Server (brain + probe) Provisioning
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/provision-monitor.yml
+
+- name: Provision Monitor Server
+  hosts: monitoring
+  become: yes
+
+  tasks:
+    # ============================================
+    # STEP 1: Common & System Setup
+    # ============================================
+    - name: "STEP 1 - Install common system packages"
+      apt:
+        name:
+          - curl
+          - unzip
+        state: present
+        update_cache: yes
+      tags: [system, dependencies]
+
+    - name: "STEP 2 - Apply common role"
+      include_role:
+        name: common
+      tags: [system]
+
+    - name: "STEP 3 - Install Node Exporter"
+      include_role:
+        name: node_exporter
+      tags: [monitoring]
+
+    # ============================================
+    # STEP 2: Brain (metrics + logs)
+    # ============================================
+    - name: "STEP 4 - Install Prometheus"
+      include_role:
+        name: prometheus
+      tags: [monitoring, prometheus]
+
+    - name: "STEP 5 - Install Loki"
+      include_role:
+        name: loki
+      tags: [monitoring, loki]
+
+    - name: "STEP 6 - Install Grafana"
+      include_role:
+        name: grafana
+      tags: [monitoring, grafana]
+
+    - name: "STEP 7 - Install Alertmanager"
+      include_role:
+        name: alertmanager
+      tags: [monitoring, alertmanager]
+
+    # ============================================
+    # STEP 3: Probe (Blackbox Exporter)
+    # ============================================
+    - name: "STEP 8 - Install Blackbox Exporter"
+      include_role:
+        name: blackbox_exporter
+      tags: [monitoring, blackbox]
+
+    # ============================================
+    # STEP 4: Health Checks
+    # ============================================
+    - name: "STEP 9 - Wait for monitoring services"
+      wait_for:
+        port: "{{ item }}"
+        host: 127.0.0.1
+        delay: 2
+        timeout: 30
+      loop:
+        - 9090   # Prometheus
+        - 3100   # Loki
+        - 3000   # Grafana
+        - 9093   # Alertmanager
+        - 9115   # Blackbox Exporter
+      tags: [health-check]
+
+  post_tasks:
+    - name: "Display provisioning summary"
+      debug:
+        msg:
+          - "=========================================="
+          - "✅ Monitor Server (brain + probe) Provisioning Complete!"
+          - "=========================================="
+          - "Brain (metrics + logs):"
+          - "  - Prometheus: http://{{ ansible_host }}:9090"
+          - "  - Grafana:    http://{{ ansible_host }}:3000"
+          - "  - Loki:       http://{{ ansible_host }}:3100"
+          - "  - Alertmanager: http://{{ ansible_host }}:9093"
+          - "Probe:"
+          - "  - Blackbox Exporter: http://{{ ansible_host }}:9115"
+          - ""
+          - "Next: Run site.yml or provision backend/salome so Promtail sends logs here."
+          - "=========================================="
+      tags: [always]

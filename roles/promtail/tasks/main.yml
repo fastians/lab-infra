@@ -7,22 +7,32 @@
     groups: adm
   become: yes
 
-- name: Download promtail
+- name: Ensure download directory exists (prerequisite for get_url)
+  command: mkdir -p /tmp/promtail_install
+  become: yes
+  become_user: root
+  changed_when: false
+  tags: [always]
+
+- name: Download promtail on remote
   get_url:
     url: "{{ promtail_url }}"
-    dest: /tmp/promtail.zip
+    dest: /tmp/promtail_install/promtail.zip
+    mode: '0644'
   become: yes
+  become_user: root
 
-- name: Extract promtail
+- name: Extract promtail on remote
   unarchive:
-    src: /tmp/promtail.zip
-    dest: /tmp/
+    src: /tmp/promtail_install/promtail.zip
+    dest: /tmp/promtail_install
     remote_src: yes
+    creates: /tmp/promtail_install/promtail-linux-amd64
   become: yes
 
-- name: Move binary
+- name: Install promtail binary
   copy:
-    src: /tmp/promtail-linux-amd64
+    src: /tmp/promtail_install/promtail-linux-amd64
     dest: /usr/local/bin/promtail
     mode: '0755'
     remote_src: yes

@@ -1,0 +1,15 @@
+[Unit]
+Description=Blackbox Exporter
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ blackbox_exporter_user }}
+Group={{ blackbox_exporter_group }}
+ExecStart={{ blackbox_exporter_install_dir }}/blackbox_exporter \
+  --config.file={{ blackbox_exporter_config_dir }}/blackbox.yml \
+  --web.listen-address=0.0.0.0:9115
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

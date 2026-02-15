@@ -1,6 +1,11 @@
 global:
   scrape_interval: 15s
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['127.0.0.1:9093']
+
 scrape_configs:
 
   # =====================
@@ -12,17 +17,45 @@ scrape_configs:
 
 
   # =====================
-  # NODE EXPORTERS (ALL SERVERS)
+  # NODE EXPORTERS (ALL SERVERS: monitor + backend + salome)
   # =====================
   - job_name: node_exporters
     static_configs:
+{% set monitor_hosts = groups.get('monitoring', []) %}
 {% set backend_hosts = groups.get('backend', []) %}
 {% set salome_hosts = groups.get('salome', []) %}
-{% for host in backend_hosts + salome_hosts %}
+{% for host in monitor_hosts + backend_hosts + salome_hosts %}
       - targets: ['{{ hostvars[host].ansible_host }}:9100']
         labels:
           instance: {{ host }}
 {% endfor %}
+
+  # =====================
+  # BLACKBOX EXPORTER (probe on monitor server)
+  # =====================
+  - job_name: blackbox_exporter
+    static_configs:
+      - targets: ['127.0.0.1:9115']
+        labels:
+          instance: monitor
+{% if blackbox_probe_targets is defined and blackbox_probe_targets %}
+  - job_name: blackbox_http_probe
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets: {{ blackbox_probe_targets | to_json }}
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - target_label: __address__
+        replacement: 127.0.0.1:9115
+      - source_labels: [__param_target]
+        target_label: instance
+      - action: replace
+        target_label: __address__
+        replacement: 127.0.0.1:9115
+{% endif %}
 
   # =====================
   # FASTAPI METRICS
@@ -38,7 +71,7 @@ scrape_configs:
 {% endfor %}
 
   # =====================
-  # SALOME FASTAPI (MONITOR SERVER)
+  # SALOME FASTAPI
   # =====================
   - job_name: salome-fastapi
     metrics_path: /metrics

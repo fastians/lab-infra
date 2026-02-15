@@ -1,3 +1,6 @@
+# Promtail ships logs to Loki on monitor server
+promtail_config_template: "promtail-backend-config.yml.j2"
+
 # Nginx Configuration
 nginx_server_name: "api.mek-lab.com"
 nginx_client_max_body_size: "500M"

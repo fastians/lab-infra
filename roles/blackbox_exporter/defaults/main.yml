@@ -1,0 +1,6 @@
+---
+blackbox_exporter_version: "0.25.0"
+blackbox_exporter_user: "blackbox_exporter"
+blackbox_exporter_group: "blackbox_exporter"
+blackbox_exporter_install_dir: "/usr/local/bin"
+blackbox_exporter_config_dir: "/etc/blackbox_exporter"

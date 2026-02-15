@@ -30,11 +30,11 @@ scrape_configs:
           __path__: /var/log/nginx/*.log
 
   # Salome FastAPI from journalctl
-  - job_name: salome-fastapi-journal
+  - job_name: salomeserver-journal
     journal:
       max_age: 12h
       labels:
-        job: salome-fastapi
+        job: salomeserver
         host: salome
     relabel_configs:
       - source_labels: ['__journal__systemd_unit']
@@ -43,7 +43,7 @@ scrape_configs:
         target_label: 'hostname'
     pipeline_stages:
       - match:
-          selector: '{unit="salome-fastapi.service"}'
+          selector: '{unit="salomeserver.service"}'
           stages:
             - json:
                 expressions:

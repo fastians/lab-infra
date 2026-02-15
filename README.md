@@ -1,6 +1,18 @@
-# Lab Infrastructure Automation
+# Infrastructure Automation
 
 A professional-grade infrastructure-as-code (IaC) project designed to automate the provisioning, configuration, and monitoring of high-performance lab environments. This repository serves as a showcase for modern DevOps practices, focusing on scalability, security, and observable systems.
+
+## One-by-one setup (manual order)
+
+Run by server name, one at a time; test, then the next:
+
+```bash
+./provision monitoring-server
+./provision salome-server
+./provision backend-server
+```
+
+Each command runs `site.yml` limited to that host only.
 
 ## 🌟 Key Features
 
@@ -27,4 +39,4 @@ This project transforms manual server setup into a reliable, repeatable process.
 
 ---
 
-*This project is used to manage the infrastructure for MEK-LAB, providing high availability for AI agents and engineering platforms.*
+*This project is used to manage the infrastructure, providing high availability for AI agents and engineering platforms.*

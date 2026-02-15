@@ -6,11 +6,35 @@
     create_home: no
   become: yes
 
-- name: Download loki
+- name: Ensure download directory exists (prerequisite for get_url)
+  command: mkdir -p "{{ loki_install_dir }}"
+  become: yes
+  become_user: root
+  changed_when: false
+  tags: [always]
+
+- name: Download Loki on remote
   get_url:
     url: "{{ loki_url }}"
-    dest: /usr/local/bin/loki
+    dest: "{{ loki_install_dir }}/{{ loki_download_filename }}"
+    mode: '0644'
+  become: yes
+  become_user: root
+
+- name: Extract Loki on remote
+  unarchive:
+    src: "{{ loki_install_dir }}/{{ loki_download_filename }}"
+    dest: "{{ loki_install_dir }}"
+    remote_src: yes
+    creates: "{{ loki_install_dir }}/{{ loki_extracted_binary }}"
+  become: yes
+
+- name: Install Loki binary
+  copy:
+    src: "{{ loki_install_dir }}/{{ loki_extracted_binary }}"
+    dest: "{{ loki_binary_path }}"
     mode: '0755'
+    remote_src: yes
   become: yes
 
 - name: Create loki config directory
@@ -42,20 +66,9 @@
   notify: restart loki
 
 - name: Create systemd service
-  copy:
+  template:
+    src: loki.service.j2
     dest: /etc/systemd/system/loki.service
-    content: |
-      [Unit]
-      Description=Loki
-      After=network.target
-
-      [Service]
-      User=loki
-      ExecStart=/usr/local/bin/loki -config.file=/etc/loki/config.yml
-      Restart=always
-
-      [Install]
-      WantedBy=default.target
   become: yes
 
 - name: Start loki

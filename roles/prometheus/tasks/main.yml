@@ -28,22 +28,32 @@
     - "{{ prometheus_data_dir }}"
   become: yes
 
-- name: Download Prometheus
+- name: Ensure download directory exists (prerequisite for get_url)
+  command: mkdir -p /tmp/prometheus_install
+  become: yes
+  become_user: root
+  changed_when: false
+  tags: [always]
+
+- name: Download Prometheus on remote
   get_url:
     url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz"
-    dest: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz"
+    dest: /tmp/prometheus_install/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz
+    mode: '0644'
   become: yes
-  
-- name: Unarchive Prometheus
+  become_user: root
+
+- name: Extract Prometheus on remote
   unarchive:
-    src: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz"
-    dest: "/tmp"
+    src: /tmp/prometheus_install/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}.tar.gz
+    dest: /tmp/prometheus_install
     remote_src: yes
+    creates: "/tmp/prometheus_install/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}/prometheus"
   become: yes
 
 - name: Install Prometheus binaries
   copy:
-    src: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}/{{ item }}"
+    src: "/tmp/prometheus_install/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}/{{ item }}"
     dest: "{{ prometheus_install_dir }}/{{ item }}"
     mode: '0755'
     remote_src: yes
@@ -57,7 +67,7 @@
 
 - name: Install Prometheus console libraries
   copy:
-    src: "/tmp/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}/{{ item }}"
+    src: "/tmp/prometheus_install/prometheus-{{ prometheus_version }}.{{ prometheus_arch }}/{{ item }}"
     dest: "{{ prometheus_config_dir }}/"
     mode: '0755'
     remote_src: yes

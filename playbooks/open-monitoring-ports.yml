@@ -1,0 +1,38 @@
+---
+# Open firewall ports for monitoring server (so Grafana, Prometheus, etc. are reachable)
+# Run: ansible-playbook -i inventories/prod/hosts.ini playbooks/open-monitoring-ports.yml
+
+- name: Open monitoring ports on firewall
+  hosts: monitoring
+  become: yes
+  vars:
+    monitoring_ports:
+      - 22     # SSH (keep access)
+      - 3000   # Grafana
+      - 9090   # Prometheus
+      - 3100   # Loki
+      - 9093   # Alertmanager
+      - 9115   # Blackbox exporter
+      - 9100   # Node exporter
+  tasks:
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow monitoring ports (UFW)
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ monitoring_ports }}"
+
+    - name: Show listening ports (debug)
+      command: ss -tlnp
+      register: ss_out
+      changed_when: false
+
+    - name: Display listening ports
+      debug:
+        msg: "{{ ss_out.stdout_lines }}"
+      when: ss_out.stdout_lines is defined

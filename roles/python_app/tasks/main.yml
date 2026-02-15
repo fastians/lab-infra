@@ -53,6 +53,8 @@
     dest: "{{ app_base_dir }}/{{ app_name }}"
     version: "{{ app_branch }}"
     force: no
+  environment:
+    GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
   become: yes
   become_user: "{{ app_user }}"
   when: not repo_exists.stat.exists
@@ -63,6 +65,8 @@
     git fetch origin
     git checkout {{ app_branch }}
     git pull origin {{ app_branch }}
+  environment:
+    GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
   become: yes
   become_user: "{{ app_user }}"
   when: repo_exists.stat.exists

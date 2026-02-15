@@ -1,0 +1,9 @@
+# Monitor server (brain + probe) - Grafana datasources use localhost
+grafana_datasource_prometheus_url: "http://localhost:9090"
+grafana_datasource_loki_url: "http://localhost:3100"
+grafana_datasource_alertmanager_url: "http://localhost:9093"
+
+# Optional: URLs for blackbox HTTP probes (e.g. https://api.mek-lab.com/health)
+# blackbox_probe_targets:
+#   - https://api.mek-lab.com/health
+#   - https://salome.mek-lab.com/health

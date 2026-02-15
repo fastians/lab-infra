@@ -8,8 +8,9 @@ loki_url: "https://github.com/grafana/loki/releases/download/v{{ loki_version }}
 promtail_version: "2.9.3"
 promtail_url: "https://github.com/grafana/loki/releases/download/v{{ promtail_version }}/promtail-linux-amd64.zip"
 
-prometheus_server: "{{ hostvars[groups['salome'][0]].ansible_host }}"
-loki_server: "{{ hostvars[groups['backend'][0]].ansible_host }}"
+# Monitor server hosts metrics + logs (brain) and blackbox (probe)
+prometheus_server: "{{ hostvars[groups['monitoring'][0]].ansible_host }}"
+loki_server: "{{ hostvars[groups['monitoring'][0]].ansible_host }}"
 
 # Application Repository URLs (defined in secrets.yml)
 mek_lab_backend_repo_url: "{{ vault_mek_lab_backend_repo_url }}"

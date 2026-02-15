@@ -39,12 +39,63 @@
       tags: [system]
 
 # ============================================
-# Backend Server Checks
+# Monitor Server Checks (brain + probe)
+# ============================================
+- name: Verify Monitor Server Services
+  hosts: monitoring
+  become: yes
+
+  vars:
+    monitor_services:
+      - name: prometheus
+        port: 9090
+      - name: grafana-server
+        port: 3000
+      - name: loki
+        port: 3100
+      - name: alertmanager
+        port: 9093
+      - name: blackbox_exporter
+        port: 9115
+      - name: node_exporter
+        port: 9100
+
+  tasks:
+    - name: "CHECK 2.0.1 - Monitor service status"
+      systemd:
+        name: "{{ item.name }}"
+      register: service_status
+      loop: "{{ monitor_services }}"
+      tags: [services]
+
+    - name: "CHECK 2.0.2 - Monitor port listening"
+      wait_for:
+        port: "{{ item.port }}"
+        host: 127.0.0.1
+        timeout: 5
+        state: started
+      loop: "{{ monitor_services }}"
+      ignore_errors: yes
+      tags: [ports]
+
+    - name: "Display monitor service status"
+      debug:
+        msg:
+          - "=========================================="
+          - "Monitor Server (brain + probe) Status"
+          - "=========================================="
+          - "{% for item in service_status.results %}"
+          - "{{ item.item.name }}: {{ 'RUNNING' if item.status.ActiveState == 'active' else 'STOPPED' }}"
+          - "{% endfor %}"
+      tags: [summary]
+
+# ============================================
+# Backend Server Checks (app server)
 # ============================================
 - name: Verify Backend Server Services
-  hosts: backend-server
+  hosts: backend
   become: yes
-  
+
   vars:
     backend_services:
       - name: backendserver
@@ -53,14 +104,10 @@
         port: 8001
       - name: llmserver
         port: 8002
-      - name: grafana-server
-        port: 3000
-      - name: prometheus
-        port: 9090
-      - name: loki
-        port: 3100
       - name: promtail
         port: 9080
+      - name: node_exporter
+        port: 9100
 
   tasks:
     - name: "CHECK 2.1 - Service status"
@@ -106,20 +153,20 @@
       tags: [summary]
 
 # ============================================
-# Salome Server Checks
+# Salome Server Checks (app server)
 # ============================================
 - name: Verify Salome Server Services
-  hosts: salome-server
+  hosts: salome
   become: yes
-  
+
   vars:
     salome_services:
-      - name: salome-fastapi
+      - name: salomeserver
         port: 8000
-      - name: blackbox_exporter
-        port: 9115
       - name: promtail
         port: 9080
+      - name: node_exporter
+        port: 9100
 
   tasks:
     - name: "CHECK 3.1 - Service status"
@@ -183,5 +230,6 @@
           - ""
           - "Check logs:"
           - "  Backend: journalctl -u backendserver -f"
-          - "  Salome: journalctl -u salome-fastapi -f"
+          - "  Salome: journalctl -u salomeserver -f"
+          - "  Monitor: journalctl -u prometheus -f"
           - "=========================================="
