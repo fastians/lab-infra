@@ -1,0 +1,46 @@
+---
+# Check why Salome :8000 is unreachable (service status + listen address).
+# Run: ansible-playbook -i inventories/prod/hosts.ini playbooks/verify-salome-metrics.yml
+
+- name: Verify Salome service and port 8000
+  hosts: salome
+  become: yes
+  tasks:
+    - name: Get salomeserver unit status
+      command: systemctl show salomeserver --property=ActiveState,SubState,MainPID
+      register: svc_status
+      changed_when: false
+      failed_when: false
+
+    - name: Show service status
+      debug:
+        msg: "salomeserver {{ svc_status.stdout }}"
+
+    - name: Check what is listening on port 8000
+      command: ss -tlnp
+      register: ss_out
+      changed_when: false
+
+    - name: Show listeners (look for 0.0.0.0:8000 or 127.0.0.1:8000)
+      debug:
+        msg: "{{ ss_out.stdout_lines }}"
+
+    - name: Show current unit ExecStart (bind address)
+      command: grep ExecStart /etc/systemd/system/salomeserver.service
+      register: exec_start
+      changed_when: false
+      failed_when: false
+
+    - name: Show ExecStart line
+      debug:
+        msg: "{{ exec_start.stdout }}"
+
+    - name: Get recent salomeserver logs (when not active, shows why)
+      command: journalctl -u salomeserver -n 30 --no-pager
+      register: journal_out
+      changed_when: false
+      failed_when: false
+
+    - name: Show recent logs
+      debug:
+        msg: "{{ journal_out.stdout_lines }}"

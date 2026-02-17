@@ -1,6 +1,9 @@
 # Promtail ships logs to Loki on monitor server
 promtail_config_template: "promtail-backend-config.yml.j2"
 
+# Listen on all interfaces so Prometheus (on monitor) can scrape /metrics
+app_host: "0.0.0.0"
+
 # Nginx Configuration
 nginx_server_name: "api.mek-lab.com"
 nginx_client_max_body_size: "500M"
@@ -8,21 +11,33 @@ nginx_template: "backend-nginx.conf.j2"
 nginx_config_name: "api.conf"
 
 # Python application configurations
+# App dir = /home/mateen_fastians/.apps (hidden folder); repo folder names match server
 python_apps:
-  - name: backendserver
+  - name: MEK_LAB_BACKEND
     port: 8000
     repo_url: "{{ vault_mek_lab_backend_repo_url }}"
     branch: main
     description: "Backend API FastAPI Service"
-    
-  - name: geoserver
+    app_base_dir: "/home/mateen_fastians/.apps"
+    app_env_template: "backendserver.env.j2"
+    app_systemd_name: backendserver
+    app_requirements_path: "app/requirements.txt"
+    app_entry_point: "app.main:app"
+  - name: MEK_LAB_GEO
     port: 8001
     repo_url: "{{ vault_geoserver_engineering_repo_url }}"
     branch: main
     description: "GEO Server - Defeaturing Project"
-    
-  - name: llmserver
+    app_base_dir: "/home/mateen_fastians/.apps"
+    app_env_template: "geoserver.env.j2"
+    app_systemd_name: geoserver
+  - name: MEK_LAB_LLM_AGENT
     port: 8002
     repo_url: "{{ vault_meklab_llm_repo_url }}"
     branch: main
     description: "LLM Server FastAPI Service"
+    app_base_dir: "/home/mateen_fastians/.apps"
+    app_env_template: "llmserver.env.j2"
+    app_systemd_name: llmserver
+    app_requirements_path: "app/requirements.txt"
+    app_entry_point: "app.main:app"

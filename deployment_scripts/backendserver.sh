@@ -2,7 +2,7 @@
 set -e
 
 SERVICE_NAME="backendserver"
-APP_DIR="/home/mateen_fastians/apps/backendserver"
+APP_DIR="/home/mateen_fastians/.apps/MEK_LAB_BACKEND"
 SERVICE_UNIT="backendserver.service"
 PORT="8000"
 BRANCH="${1:-main}"
@@ -19,8 +19,8 @@ if [ ! -d ".venv" ]; then
     python3 -m venv .venv
 fi
 
-source .venv/bin/activate
-timeout 300 pip install -r requirements.txt --no-input --quiet
+# Use venv pip explicitly (avoids PEP 668 externally-managed-environment); repo has app/ subdir
+timeout 300 .venv/bin/pip install -r app/requirements.txt --no-input --quiet
 
 sudo systemctl restart "$SERVICE_UNIT"
 

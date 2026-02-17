@@ -1,5 +1,5 @@
 [Unit]
-Description={{ app_description | default(app_name + ' FastAPI Service') }}
+Description={{ app_description }}
 After=network.target
 
 [Service]
@@ -9,7 +9,7 @@ Group={{ app_user }}
 WorkingDirectory={{ app_base_dir }}/{{ app_name }}
 Environment="PATH={{ app_base_dir }}/{{ app_name }}/.venv/bin"
 EnvironmentFile={{ app_base_dir }}/{{ app_name }}/.env
-ExecStart=/usr/bin/env PYTHONPATH={{ app_base_dir }}/{{ app_name }} {{ app_base_dir }}/{{ app_name }}/.venv/bin/uvicorn {{ app_entry_point }} --host {{ app_host }} --port {{ app_port }} --workers {{ app_workers }}
+ExecStart={{ app_base_dir }}/{{ app_name }}/run_uvicorn.sh
 Restart=always
 RestartSec=10
 

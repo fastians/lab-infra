@@ -3,9 +3,9 @@ grafana_datasource_prometheus_url: "http://localhost:9090"
 grafana_datasource_loki_url: "http://localhost:3100"
 grafana_datasource_alertmanager_url: "http://localhost:9093"
 
-# Prometheus: scrape node_exporter (ports from hosts.ini: monitor, backend, salome only)
+# Prometheus: scrape node_exporter (monitor via localhost to avoid hairpin/firewall; backend/salome via their IPs)
 prometheus_node_targets:
-  - target: "168.107.19.241:9100"
+  - target: "127.0.0.1:9100"
     instance: monitor
   - target: "34.50.12.114:9100"
     instance: backend

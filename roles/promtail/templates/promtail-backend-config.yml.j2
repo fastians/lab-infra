@@ -29,7 +29,7 @@ scrape_configs:
           host: backend
           __path__: /var/log/nginx/*.log
 
-  # GeoServer from journalctl
+  # GeoServer (MEK_LAB_GEO) from journalctl
   - job_name: geoserver-journal
     journal:
       max_age: 12h
@@ -48,7 +48,7 @@ scrape_configs:
             - labels:
                 level:
 
-  # Backend from journalctl
+  # Backend (MEK_LAB_BACKEND) from journalctl
   - job_name: backendserver-journal
     journal:
       max_age: 12h
@@ -71,7 +71,7 @@ scrape_configs:
                 level:
                 logger:
 
-  # LLM server from journalctl
+  # LLM server (MEK_LAB_LLM_AGENT) from journalctl
   - job_name: llmserver-journal
     journal:
       max_age: 12h

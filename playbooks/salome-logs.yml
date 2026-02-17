@@ -1,0 +1,54 @@
+---
+# Show deployed unit file and latest salomeserver logs (to debug 502).
+# Run: ansible-playbook -i inventories/prod/hosts.ini playbooks/salome-logs.yml
+
+- name: Salome unit file and logs
+  hosts: salome
+  become: yes
+  tasks:
+    - name: Show deployed salomeserver.service
+      command: cat /etc/systemd/system/salomeserver.service
+      register: unit_file
+      changed_when: false
+
+    - name: Unit file contents
+      debug:
+        msg: "{{ unit_file.stdout_lines }}"
+
+    - name: Restart salomeserver to pick up any unit changes
+      systemd:
+        name: salomeserver
+        state: restarted
+        daemon_reload: yes
+
+    - name: Wait for startup or crash
+      command: sleep 5
+      changed_when: false
+
+    - name: Service active?
+      command: systemctl is-active salomeserver
+      register: active
+      changed_when: false
+      failed_when: false
+
+    - name: Port 8000 listener
+      command: ss -tlnp | grep 8000 || true
+      register: port_8000
+      changed_when: false
+      failed_when: false
+
+    - name: Show status and port
+      debug:
+        msg:
+          - "salomeserver is {{ active.stdout }}"
+          - "port 8000: {{ port_8000.stdout }}"
+
+    - name: Last 50 journal lines
+      command: journalctl -u salomeserver -n 50 --no-pager
+      register: journal
+      changed_when: false
+      failed_when: false
+
+    - name: Journal output
+      debug:
+        msg: "{{ journal.stdout_lines }}"

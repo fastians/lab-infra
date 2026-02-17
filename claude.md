@@ -12,7 +12,7 @@ Ansible infrastructure automation: monitoring, provisioning, deployment, configu
 - `inventories/prod/hosts.ini`: Inventory (backend-server, salome-server, monitoring-server)
 - `inventories/prod/group_vars/`: all/all.yml, all/secrets.yml, backend.yml, salome.yml, monitoring.yml
 - `roles/`: python_app, nginx, common; prometheus, grafana, loki, alertmanager, blackbox_exporter (monitor); promtail, node_exporter (app servers + monitor)
-- `playbooks/`: provision-monitor.yml, provision-backend.yml, provision-salome.yml, deploy.yml, manage-services.yml, verify-servers.yml, open-monitoring-ports.yml
+- `playbooks/`: provision-*.yml, deploy.yml, sync-scripts.yml, manage-services.yml, verify-servers.yml, open-firewall-ports.yml, salome-debug.yml, test-api-docs.yml; app units come from site.yml (single source of truth)
 - `docs/`: ARCHITECTURE.md, OPERATIONS.md, CONFIGURATION.md
 
 ## Quick Commands
@@ -22,7 +22,7 @@ Ansible infrastructure automation: monitoring, provisioning, deployment, configu
 ./provision backend             # or backend-server
 ./provision salome              # or salome-server
 ./provision verify              # Verify all servers
-./provision open-monitoring-ports
+./provision open-firewall-ports
 
 # Deployment
 ./deploy <service> <branch>     # Deploy application

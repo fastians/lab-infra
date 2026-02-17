@@ -13,7 +13,9 @@ app_requirements_path: "requirements.txt"
 app_extra_dirs: []
 
 # These must be provided by the caller:
-# app_name: Name of the application (e.g., backendserver)
+# app_name: Directory/repo name (e.g., MEK_LAB_BACKEND)
 # app_port: Port number (e.g., 8000)
 # app_repo_url: Git repository URL
 # app_description: Service description (optional)
+# app_systemd_name: systemd unit name (default: app_name), e.g. backendserver for friendly service name
+app_systemd_name: "{{ app_name }}"

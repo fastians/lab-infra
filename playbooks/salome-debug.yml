@@ -1,0 +1,70 @@
+---
+# Salome: show unit file, service status, port 8000, and recent logs (debug 502 / Prometheus down).
+# Run: ansible-playbook -i inventories/prod/hosts.ini playbooks/salome-debug.yml
+# Optional: -e restart=yes to restart salomeserver and show logs again.
+
+- name: Salome service and logs
+  hosts: salome
+  become: yes
+  vars:
+    restart_salome: "{{ restart | default(false) | bool }}"
+  tasks:
+    - name: Show deployed salomeserver.service
+      command: cat /etc/systemd/system/salomeserver.service
+      register: unit_file
+      changed_when: false
+
+    - name: Unit file contents
+      debug:
+        msg: "{{ unit_file.stdout_lines }}"
+
+    - name: Service status
+      command: systemctl show salomeserver --property=ActiveState,SubState,MainPID
+      register: svc_status
+      changed_when: false
+      failed_when: false
+
+    - name: Show status
+      debug:
+        msg: "salomeserver {{ svc_status.stdout }}"
+
+    - name: What is listening (port 8000)
+      command: ss -tlnp
+      register: ss_out
+      changed_when: false
+
+    - name: ExecStart line
+      command: grep ExecStart /etc/systemd/system/salomeserver.service
+      register: exec_start
+      changed_when: false
+      failed_when: false
+
+    - name: Show listeners
+      debug:
+        msg: "{{ ss_out.stdout_lines }}"
+
+    - name: Show ExecStart
+      debug:
+        msg: "{{ exec_start.stdout }}"
+
+    - name: Restart salomeserver (optional)
+      systemd:
+        name: salomeserver
+        state: restarted
+        daemon_reload: yes
+      when: restart_salome | bool
+
+    - name: Wait after restart
+      command: sleep 5
+      changed_when: false
+      when: restart_salome | bool
+
+    - name: Last 40 journal lines
+      command: journalctl -u salomeserver -n 40 --no-pager
+      register: journal
+      changed_when: false
+      failed_when: false
+
+    - name: Journal output
+      debug:
+        msg: "{{ journal.stdout_lines }}"

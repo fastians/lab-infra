@@ -1,0 +1,62 @@
+---
+# Open UFW ports: monitor (public), backend and salome (from monitor IP only).
+# Run: ansible-playbook -i inventories/prod/hosts.ini playbooks/open-firewall-ports.yml
+# Optional: --limit monitoring | backend | salome
+
+- name: Open monitoring server ports (Grafana, Prometheus, Loki, etc.)
+  hosts: monitoring
+  become: yes
+  vars:
+    monitoring_ports: [22, 3000, 9090, 3100, 9093, 9115, 9100]
+  tasks:
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow monitoring ports
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ monitoring_ports }}"
+
+- name: Allow monitor to scrape backend (node_exporter 9100, FastAPI 8000–8002)
+  hosts: backend
+  become: yes
+  vars:
+    monitor_ip: "168.107.19.241"
+    backend_ports: [9100, 8000, 8001, 8002]
+  tasks:
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow monitor IP to scrape backend ports
+      ufw:
+        rule: allow
+        from: "{{ monitor_ip }}"
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ backend_ports }}"
+
+- name: Allow monitor to scrape salome (node_exporter 9100, FastAPI 8000)
+  hosts: salome
+  become: yes
+  vars:
+    monitor_ip: "168.107.19.241"
+    salome_ports: [9100, 8000]
+  tasks:
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow monitor IP to scrape salome ports
+      ufw:
+        rule: allow
+        from: "{{ monitor_ip }}"
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ salome_ports }}"

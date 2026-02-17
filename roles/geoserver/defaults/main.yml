@@ -2,6 +2,6 @@
 geoserver_user: mateen_fastians
 geoserver_repo_url: "{{ vault_geoserver_engineering_repo_url }}"
 geoserver_branch: "main"
-geoserver_app_dir: "/home/{{ geoserver_user }}/.apps/Defeaturing"
+geoserver_app_dir: "/home/{{ geoserver_user }}/.apps/MEK_LAB_GEO"
 geoserver_python_version: "python3"
 geoserver_port: 8001

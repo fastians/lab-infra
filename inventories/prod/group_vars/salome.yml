@@ -1,6 +1,9 @@
 # Salome server group variables
 promtail_config_template: "promtail-config.yml.j2"
 
+# Listen on all interfaces so Prometheus (on monitor) can scrape /metrics
+app_host: "0.0.0.0"
+
 # Nginx Configuration
 nginx_server_name: "salome.mek-lab.com"
 nginx_client_max_body_size: "10M"
@@ -8,13 +11,20 @@ nginx_template: "salome-nginx.conf.j2"
 nginx_config_name: "salome.conf"
 
 # Python application configurations
+# App dir = /home/mateen_fastians/opt; repo clones into MEK_LAB_SALOME (repo name)
+# app_env_template: use salomeserver.env.j2 (role expects env/{{ app_name }}.env.j2 by default)
 python_apps:
-  - name: salomeserver
+  - name: MEK_LAB_SALOME
     port: 8000
     repo_url: "{{ vault_salome_engineering_repo_url }}"
     branch: main
     description: "Salome FastAPI Service"
-    app_base_dir: "/home/mateen_fastians/opt/MEK_LAB_SALOME"
+    app_base_dir: "/home/mateen_fastians/opt"
+    app_env_template: "salomeserver.env.j2"
+    app_systemd_name: salomeserver
+    # Repo has FastAPI app in app/ subdir
+    app_requirements_path: "app/requirements.txt"
+    app_entry_point: "app.main:app"
     app_extra_dirs:
       - "job_scripts"
       - "job_outputs"

@@ -2,27 +2,25 @@
 set -e
 
 SERVICE_NAME="geoserver"
-APP_DIR="/home/mateen_fastians/.apps/Defeaturing"
+APP_DIR="/home/mateen_fastians/.apps/MEK_LAB_GEO"
 SERVICE_UNIT="geoserver.service"
 PORT="8001"
-
 BRANCH="${1:-main}"
 
 echo "[DEPLOY] $SERVICE_NAME ($BRANCH)"
 
 cd "$APP_DIR"
-
 git fetch origin
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+git pull
 
 if [ ! -d ".venv" ]; then
     echo "[SETUP] Creating virtual environment..."
     python3 -m venv .venv
 fi
 
-source .venv/bin/activate
-pip install -r requirements.txt
+# Use venv pip explicitly (avoids PEP 668 externally-managed-environment)
+timeout 300 .venv/bin/pip install -r requirements.txt --no-input --quiet
 
 sudo systemctl restart "$SERVICE_UNIT"
 
@@ -31,4 +29,4 @@ for i in {1..10}; do
   sleep 1
 done
 
-echo "[DEPLOY OK] $SERVICE_NAME ($BRANCH)"
+echo "[DEPLOY OK] $SERVICE_NAME"

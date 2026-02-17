@@ -1,0 +1,142 @@
+---
+# Ensure https://api.mek-lab.com/docs works and test with Ansible
+# Usage: ansible-playbook -i inventories/prod/hosts.ini playbooks/test-api-docs.yml
+#
+# 502 Bad Gateway = nginx is up but nothing on port 8000. Start the backend app (see docs/API_DOCS_502_FIX.md).
+
+- name: Ensure backend API and /docs are working
+  hosts: backend
+  become: yes
+
+  vars:
+    # Service may be backendserver (new) or MEK_LAB_BACKEND (old name)
+    backend_unit_candidates:
+      - backendserver
+      - MEK_LAB_BACKEND
+
+  tasks:
+    - name: Find which backend service unit exists
+      stat:
+        path: "/etc/systemd/system/{{ item }}.service"
+      register: backend_unit_stat
+      loop: "{{ backend_unit_candidates }}"
+
+    - name: Fail when no backend systemd unit found
+      fail:
+        msg: |-
+          No backend service found (looked for backendserver.service, MEK_LAB_BACKEND.service).
+          Create it with: ansible-playbook -i inventories/prod/hosts.ini site.yml --limit backend-server
+      when: (backend_unit_stat.results | selectattr('stat.exists') | list | length) == 0
+
+    - name: Ensure backend service is started
+      systemd:
+        name: "{{ (backend_unit_stat.results | selectattr('stat.exists') | list)[0].item }}"
+        state: started
+      register: backend_start
+
+    - name: Ensure nginx is started
+      systemd:
+        name: nginx
+        state: started
+
+    - name: Wait for backend app to listen on 8000
+      wait_for:
+        port: 8000
+        host: 127.0.0.1
+        timeout: 15
+        state: started
+
+    - name: Test backend health (direct)
+      uri:
+        url: "http://127.0.0.1:8000/health"
+        method: GET
+        status_code: 200
+        timeout: 10
+      register: health_direct
+
+    - name: Test /docs (direct to app)
+      uri:
+        url: "http://127.0.0.1:8000/docs"
+        method: GET
+        status_code: [200, 301, 302, 307]
+        timeout: 10
+        return_content: no
+      register: docs_direct
+
+    - name: Test /docs via nginx (https, Host api.mek-lab.com)
+      uri:
+        url: "https://127.0.0.1/docs"
+        method: GET
+        headers:
+          Host: "api.mek-lab.com"
+        status_code: [200, 301, 302, 307]
+        timeout: 10
+        validate_certs: no
+        return_content: no
+      register: docs_nginx
+      ignore_errors: yes
+
+    - name: Display API docs test result
+      debug:
+        msg:
+          - "=========================================="
+          - "API docs test (api.mek-lab.com/docs)"
+          - "  Backend unit:        {{ (backend_unit_stat.results | selectattr('stat.exists') | list)[0].item }}"
+          - "  Health (direct):     {{ health_direct.status }}"
+          - "  /docs (direct:8000): {{ docs_direct.status }}"
+          - "  /docs (via nginx):   {{ docs_nginx.status | default('skip or failed') }}"
+          - "=========================================="
+          - "502 = backend not running. Manual fix: ssh to backend, sudo systemctl start backendserver"
+          - "=========================================="
+
+    - name: Fail if health or direct /docs failed
+      assert:
+        that:
+          - health_direct.status | default(0) == 200
+          - docs_direct.status | default(0) in [200, 301, 302, 307]
+        fail_msg: "Backend app not responding on 8000. On server run: sudo systemctl start backendserver && journalctl -u backendserver -n 50"
+        success_msg: "Backend API and /docs are OK."
+
+    # ========== LLM (port 8002, https://api.mek-lab.com/llm/docs)
+    - name: Ensure llmserver is started
+      systemd:
+        name: llmserver
+        state: started
+      ignore_errors: yes
+
+    - name: Wait for LLM app to listen on 8002
+      wait_for:
+        port: 8002
+        host: 127.0.0.1
+        timeout: 15
+        state: started
+      ignore_errors: yes
+
+    - name: Test LLM /docs (direct 8002)
+      uri:
+        url: "http://127.0.0.1:8002/docs"
+        method: GET
+        status_code: [200, 301, 302, 307]
+        timeout: 10
+        return_content: no
+      register: llm_docs_direct
+      ignore_errors: yes
+
+    - name: Test LLM /docs via nginx (https://api.mek-lab.com/llm/docs)
+      uri:
+        url: "https://127.0.0.1/llm/docs"
+        method: GET
+        headers:
+          Host: "api.mek-lab.com"
+        status_code: [200, 301, 302, 307]
+        timeout: 10
+        validate_certs: no
+        return_content: no
+      register: llm_docs_nginx
+      ignore_errors: yes
+
+    - name: Display LLM docs test result
+      debug:
+        msg:
+          - "LLM docs: direct 8002={{ llm_docs_direct.status | default('n/a') }}, via nginx /llm/docs={{ llm_docs_nginx.status | default('n/a') }}"
+          - "If 502/404: sudo systemctl start llmserver"

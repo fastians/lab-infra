@@ -6,6 +6,8 @@
   vars:
     service: "{{ service | default('backendserver') }}"
     branch: "{{ branch | default('main') }}"
+    # Service name = systemd unit name (backendserver, geoserver, llmserver, salomeserver)
+    unit_name: "{{ service }}"
     script_map:
       backendserver: "/home/mateen_fastians/.deploy/backendserver.sh"
       geoserver: "/home/mateen_fastians/.deploy/geoserver.sh"
@@ -25,21 +27,34 @@
       become_user: mateen_fastians
       register: deploy_output
       changed_when: "'DEPLOY OK' in deploy_output.stdout"
+      failed_when: false
+
+    - name: Show deploy script failure
+      fail:
+        msg: |-
+          Deploy failed (exit code {{ deploy_output.rc }}).
+          stdout: {{ deploy_output.stdout_lines | default([]) | join('\n') }}
+          stderr: {{ deploy_output.stderr_lines | default([]) | join('\n') }}
+          Fix: ensure the service exists (run site.yml --limit <host>) and sync scripts (playbooks/sync-scripts.yml), then retry.
+      when: deploy_output.rc != 0
 
     - name: Show deployment output
       debug:
         msg: "{{ deploy_output.stdout_lines }}"
+      when: deploy_output.rc == 0
 
     - name: Verify service is running
       systemd:
-        name: "{{ service }}.service"
+        name: "{{ unit_name }}.service"
         state: started
       become: yes
       register: service_status
+      when: deploy_output.rc == 0
 
     - name: Deployment summary
       debug:
-        msg: 
+        msg:
           - "✅ Service: {{ service }}"
           - "✅ Branch: {{ branch }}"
           - "✅ Status: {{ service_status.status.ActiveState }}"
+      when: deploy_output.rc == 0

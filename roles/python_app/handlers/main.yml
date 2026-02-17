@@ -1,7 +1,7 @@
 ---
-- name: Restart {{ app_name }}
+- name: "Restart {{ app_systemd_name }}"
   systemd:
-    name: "{{ app_name }}"
+    name: "{{ app_systemd_name }}"
     state: restarted
     daemon_reload: yes
   become: yes

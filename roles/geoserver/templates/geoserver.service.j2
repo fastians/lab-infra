@@ -5,13 +5,13 @@ After=network.target
 [Service]
 User=mateen_fastians
 Group=mateen_fastians
-WorkingDirectory=/home/mateen_fastians/.apps/Defeaturing
+WorkingDirectory=/home/mateen_fastians/.apps/MEK_LAB_GEO
 
 Environment="PYTHONUNBUFFERED=1"
 Environment="PYTHONPATH=/usr/lib/freecad-python3/lib"
-EnvironmentFile=/home/mateen_fastians/.apps/Defeaturing/.env
+EnvironmentFile=/home/mateen_fastians/.apps/MEK_LAB_GEO/.env
 
-ExecStart=/home/mateen_fastians/.apps/Defeaturing/.venv/bin/uvicorn main:app \
+ExecStart=/home/mateen_fastians/.apps/MEK_LAB_GEO/.venv/bin/uvicorn main:app \
     --host 127.0.0.1 \
     --port 8001 \
     --log-level info

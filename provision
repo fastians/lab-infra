@@ -28,7 +28,7 @@ Other commands:
   backend             Same as backend-server, uses provision-backend.yml
   verify              Verify all servers health
   check <server>      Check one server only
-  open-monitoring-ports  Open firewall ports on monitoring server (Grafana, Prometheus, etc.)
+  open-firewall-ports     Open UFW ports (monitor + app servers for Prometheus scrape)
   help                This message
 
 Options:
@@ -83,10 +83,10 @@ case "$1" in
         ansible-playbook -i "$INVENTORY" playbooks/verify-servers.yml "$@"
         ;;
 
-    open-monitoring-ports)
+    open-firewall-ports|open-monitoring-ports)
         shift
-        echo "🔓 Opening firewall ports on monitoring server (3000, 9090, 3100, 9093, 9115, 9100)..."
-        ansible-playbook -i "$INVENTORY" playbooks/open-monitoring-ports.yml "$@"
+        echo "🔓 Opening firewall ports (monitor + backend/salome for Prometheus)..."
+        ansible-playbook -i "$INVENTORY" playbooks/open-firewall-ports.yml "$@"
         ;;
 
     check)

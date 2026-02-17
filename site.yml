@@ -38,6 +38,10 @@
         app_branch: "{{ item.branch }}"
         app_description: "{{ item.description }}"
         app_base_dir: "{{ item.app_base_dir | default(omit) }}"
+        app_env_template: "{{ item.app_env_template | default(omit) }}"
+        app_systemd_name: "{{ item.app_systemd_name | default(omit) }}"
+        app_requirements_path: "{{ item.app_requirements_path | default(omit) }}"
+        app_entry_point: "{{ item.app_entry_point | default(omit) }}"
         app_extra_dirs: "{{ item.app_extra_dirs | default([]) }}"
       loop: "{{ python_apps }}"
 
@@ -47,6 +51,16 @@
   roles:
     - nginx
   tasks:
+    # Ensure opt exists so deploy.sh and app dirs live here; avoid clone wiping parent
+    - name: Ensure Salome opt directory exists
+      file:
+        path: /home/mateen_fastians/opt
+        state: directory
+        owner: mateen_fastians
+        group: mateen_fastians
+        mode: '0755'
+      become: yes
+
     - name: Deploy Salome applications
       include_role:
         name: python_app
@@ -57,5 +71,43 @@
         app_branch: "{{ item.branch }}"
         app_description: "{{ item.description }}"
         app_base_dir: "{{ item.app_base_dir | default(omit) }}"
+        app_env_template: "{{ item.app_env_template | default(omit) }}"
+        app_systemd_name: "{{ item.app_systemd_name | default(omit) }}"
+        app_requirements_path: "{{ item.app_requirements_path | default(omit) }}"
+        app_entry_point: "{{ item.app_entry_point | default(omit) }}"
         app_extra_dirs: "{{ item.app_extra_dirs | default(omit) }}"
       loop: "{{ python_apps }}"
+
+    # Salome: wrapper script (PYTHONPATH repo root + app/) and unit so src import works
+    - name: Deploy Salome run_uvicorn.sh (PYTHONPATH)
+      template:
+        src: playbooks/templates/salome-run-uvicorn.sh.j2
+        dest: "{{ python_apps[0].app_base_dir }}/{{ python_apps[0].name }}/run_uvicorn.sh"
+        mode: "0755"
+        owner: mateen_fastians
+        group: mateen_fastians
+      vars:
+        app_base_dir: "{{ python_apps[0].app_base_dir }}"
+        app_name: "{{ python_apps[0].name }}"
+        app_entry_point: "{{ python_apps[0].app_entry_point }}"
+        app_host: "{{ app_host }}"
+        app_port: "{{ python_apps[0].port }}"
+        app_workers: 1
+
+    - name: Deploy salomeserver.service (uses wrapper)
+      template:
+        src: playbooks/templates/salomeserver.service.j2
+        dest: /etc/systemd/system/salomeserver.service
+        mode: "0644"
+      vars:
+        app_user: mateen_fastians
+        app_base_dir: "{{ python_apps[0].app_base_dir }}"
+        app_name: "{{ python_apps[0].name }}"
+        app_description: "{{ python_apps[0].description }}"
+
+    - name: Restart and enable salomeserver
+      systemd:
+        name: salomeserver
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
