@@ -39,7 +39,10 @@ python_apps:
     app_systemd_name: cqrunner
     app_requirements_path: "requirements.txt"
     app_entry_point: "main:app"
-    app_python_version: "3.11"
+    # System python only needs to be an installable apt version (role installs it even for
+    # conda apps). Match GEO's value; the runner actually runs from the conda env below,
+    # whose python is pinned to 3.11 by the cqrunner_env creation task in site-geo-apps.yml.
+    app_python_version: "{{ geo_app_python_version }}"
     app_use_conda: true
     app_conda_dir: /home/mateen_fastians/miniconda3
     app_conda_env_name: cqrunner_env
