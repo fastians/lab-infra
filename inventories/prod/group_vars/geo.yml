@@ -25,3 +25,21 @@ python_apps:
     app_use_conda: true
     app_conda_dir: /home/mateen_fastians/miniconda3
     app_conda_env_name: freecad_env
+
+  # CadQuery runner: executes generated CadQuery → STEP for /cad-gen2. Separate conda env
+  # (cqrunner_env) because cadquery's OCP binding conflicts with GEO's pythonocc. Internal
+  # only (:8003), reached from the backend via cq_runner internal URL — no public nginx.
+  - name: MEK_LAB_CQ
+    port: 8003
+    repo_url: "{{ vault_cq_runner_repo_url }}"
+    branch: main
+    description: "Mek-Lab CadQuery runner (internal :8003; backend-only)"
+    app_base_dir: "/home/mateen_fastians/.apps"
+    app_env_template: "cqrunner.env.j2"
+    app_systemd_name: cqrunner
+    app_requirements_path: "requirements.txt"
+    app_entry_point: "main:app"
+    app_python_version: "3.11"
+    app_use_conda: true
+    app_conda_dir: /home/mateen_fastians/miniconda3
+    app_conda_env_name: cqrunner_env

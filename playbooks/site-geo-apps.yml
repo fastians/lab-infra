@@ -79,7 +79,34 @@
         _python_apps_target
         | selectattr('app_use_conda', 'defined')
         | selectattr('app_use_conda', 'equalto', true)
+        | selectattr('app_conda_env_name', 'equalto', 'freecad_env')
         | list | length > 0
+
+    # CadQuery runner needs its OWN conda env (cadquery/OCP conflicts with GEO's pythonocc).
+    # The `conda` role only creates freecad_env, so create cqrunner_env here directly.
+    - name: Check if cqrunner conda env exists
+      stat:
+        path: /home/mateen_fastians/miniconda3/envs/cqrunner_env
+      register: cqrunner_env_stat
+      become: yes
+      when: >-
+        _python_apps_target | selectattr('app_conda_env_name', 'equalto', 'cqrunner_env') | list | length > 0
+
+    - name: Create cqrunner_env with cadquery (conda-forge)
+      shell: >
+        runuser -u mateen_fastians -- env
+        HOME=/home/mateen_fastians USER=mateen_fastians LOGNAME=mateen_fastians
+        /home/mateen_fastians/miniconda3/bin/conda create
+        -n cqrunner_env -c conda-forge
+        python=3.11 pip cadquery=2.4.0 -y
+      args:
+        chdir: "/home/mateen_fastians"
+      become: yes
+      async: 3600
+      poll: 30
+      when: >-
+        (_python_apps_target | selectattr('app_conda_env_name', 'equalto', 'cqrunner_env') | list | length > 0)
+        and not (cqrunner_env_stat.stat.exists | default(false))
 
     - name: Deploy GEO Python application
       include_role:
